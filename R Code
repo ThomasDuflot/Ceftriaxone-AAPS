@@ -581,25 +581,22 @@ stats_percentage <- bland_altman_df %>%
     loa_upper = mean_diff + 1.96 * sd_diff,
     loa_lower = mean_diff - 1.96 * sd_diff
   )
-
 # Create the Bland-Altman plot for absolute differences
 p1 <- ggplot(bland_altman_df, aes(x = mean_values, y = differences, color = Model)) +
   geom_point(alpha = 0.6) +
   geom_hline(data = stats_absolute, aes(yintercept = mean_diff), color = "red", linetype = "dashed", size = 1) +
   geom_hline(data = stats_absolute, aes(yintercept = loa_upper), color = "darkgreen", linetype = "dashed", size = 0.8) +
   geom_hline(data = stats_absolute, aes(yintercept = loa_lower), color = "darkgreen", linetype = "dashed", size = 0.8) +
-  facet_wrap(~ Model, ncol = 9) +
+  facet_wrap(~ Model, ncol = 9, scales = "free_y") +  # Set scales to free_y
   labs(
-    title = "Bland-Altman Plot - Absolute Differences",
+    title = "Bland-Altman Plot - Signed Differences",
     x = "Mean of Observed and Predicted",
     y = "Difference (Observed - Predicted)"
   ) +
   custom_theme +
-  scale_color_jco() +
-  theme(legend.position = "none") +
-  scale_y_continuous(
-    breaks = seq(differences_min, differences_max, by = 25)
-  )
+  scale_color_jco() +  
+  theme(legend.position = "none")
+  # Remove or comment out the scale_y_continuous() function
 
 # Create the Bland-Altman plot for percentage differences
 p2 <- ggplot(bland_altman_df, aes(x = mean_values, y = perc_differences, color = Model)) +
@@ -607,18 +604,15 @@ p2 <- ggplot(bland_altman_df, aes(x = mean_values, y = perc_differences, color =
   geom_hline(data = stats_percentage, aes(yintercept = mean_diff), color = "red", linetype = "dashed", size = 1) +
   geom_hline(data = stats_percentage, aes(yintercept = loa_upper), color = "darkgreen", linetype = "dashed", size = 0.8) +
   geom_hline(data = stats_percentage, aes(yintercept = loa_lower), color = "darkgreen", linetype = "dashed", size = 0.8) +
-  facet_wrap(~ Model, ncol = 9) +
+  facet_wrap(~ Model, ncol = 9, scales = "free_y") +  # Set scales to free_y
   labs(
-    title = "Bland-Altman Plot - Percentage Differences",
+    title = "Bland-Altman Plot - Relative Differences",
     x = "Mean of Observed and Predicted",
-    y = "Percentage Difference (%)"
+    y = "Relative Difference (%)"
   ) +
   custom_theme +
-  scale_color_jco() +
-  theme(legend.position = "none") +
-  scale_y_continuous(
-    breaks = seq(perc_differences_min, perc_differences_max, by = 100)
-  )
+  scale_color_jco() +  
+  theme(legend.position = "none")
 
 spacer <- ggplot() + 
   theme_void() + 
