@@ -301,11 +301,11 @@ DFPatient$Gijsen <- (GijsenBmax*(DFPatient$CefT/554.58)+(DFPatient$CefT/554.58)^
 ### GREGOIRE ###
 DFPatient$Gregoire <- (1-(-5*10^-9*(DFPatient$CefT^3)+6*10^-7*(DFPatient$CefT^2)-0.0004*DFPatient$CefT+0.9393))*DFPatient$CefT
 
-### HARTMANN ###
-HartmannHill= 1
-HartmannBmax = 223*((DFPatient$ALB/27)^HartmannHill)
-HartmannKd = 30.3	
-DFPatient$Hartmann <- 0.5*((DFPatient$CefT-HartmannBmax-HartmannKd)+sqrt((DFPatient$CefT-HartmannBmax-HartmannKd)^2+4*HartmannKd*DFPatient$CefT))
+### Hartman ###
+HartmanHill= 1
+HartmanBmax = 223*((DFPatient$ALB/27)^HartmanHill)
+HartmanKd = 30.3	
+DFPatient$Hartman <- 0.5*((DFPatient$CefT-HartmanBmax-HartmanKd)+sqrt((DFPatient$CefT-HartmanBmax-HartmanKd)^2+4*HartmanKd*DFPatient$CefT))
 
 ### HEFFERNAN ###
 HeffernanBmax = DFPatient$ALB*0.82*(554.6/66500)*1000
@@ -331,7 +331,7 @@ DFPatient$Ulldemolins <- (1*exp(-0.82*(DFPatient$ALB/24.2)))*DFPatient$CefT
 
 
 # Calculate absolute and percentage error for each model prediction based on CefUnbound
-model_columns <- c('Bos', 'Dreesen', 'Gijsen', 'Gregoire', 'Hartmann', 'Heffernan', 'Leegwater', 'Standing', 'Ulldemolins')
+model_columns <- c('Bos', 'Dreesen', 'Gijsen', 'Gregoire', 'Hartman', 'Heffernan', 'Leegwater', 'Standing', 'Ulldemolins')
 
 # Loop through each model column to create new columns for absolute and percentage error
 for (col in model_columns) {
@@ -345,7 +345,7 @@ print(head(DFPatient))
 
 
 # Calculate absolute and percentage error for each model prediction based on CefUnbound
-model_columns <- c('Bos', 'Dreesen', 'Gijsen', 'Gregoire', 'Hartmann', 'Heffernan', 'Leegwater', 'Standing', 'Ulldemolins')
+model_columns <- c('Bos', 'Dreesen', 'Gijsen', 'Gregoire', 'Hartman', 'Heffernan', 'Leegwater', 'Standing', 'Ulldemolins')
 
 # Loop through each model column to create new columns for absolute and percentage error
 for (col in model_columns) {
@@ -414,7 +414,7 @@ dev.off()
 write.csv2(DFPatient,"PatientPrediction.csv")
 
 # Calculate MAE, MPE, RMSE, and R-squared for each model using linear regression
-model_columns <- c('Bos', 'Dreesen', 'Gijsen', 'Gregoire', 'Hartmann', 'Heffernan', 'Leegwater', 'Standing', 'Ulldemolins')
+model_columns <- c('Bos', 'Dreesen', 'Gijsen', 'Gregoire', 'Hartman', 'Heffernan', 'Leegwater', 'Standing', 'Ulldemolins')
 
 # Initialiser un data frame pour stocker les résultats
 model_metrics <- data.frame(
@@ -589,7 +589,7 @@ custom_theme <- theme(
 observed <- DFPatient$CefUnbound
 
 # List of model names
-model_columns <- c("Bos", "Dreesen", "Gijsen", "Gregoire", "Hartmann", 
+model_columns <- c("Bos", "Dreesen", "Gijsen", "Gregoire", "Hartman", 
                    "Heffernan", "Leegwater", "Standing", "Ulldemolins")
 
 # Initialize an empty list to store dataframes for each model
@@ -692,13 +692,12 @@ dev.off()
 
 ####################### Evaluation of CEFu prediction on a retrospective cohort of patient treated by ceftriaxone ####################### 
 
-setwd("C:/Users/thomas.duflot/Desktop/JAC/AAC/R1") #set working directory
-DFCEF<-read.csv2("Supplementary File S1 - Studied Population.csv")
+DFCEF<-read.csv2("Studied Population.csv")
 char_cols <- sapply(DFCEF, is.character)
 DFCEF[char_cols] <- lapply(DFCEF[char_cols], factor)
 DFCEF$ID<-as.factor(DFCEF$ID)
 
-library(forcats)
+
 DFCEF$Department <- fct_lump(DFCEF$Department, n = 8, other_level = "Other")
 DFCEF$Infection <- fct_lump(DFCEF$Infection, n = 6, other_level = "Other")
 DFCEF$Bacteria <- fct_lump(DFCEF$Bacteria, n = 5, other_level = "Other")
@@ -731,8 +730,7 @@ DFCEF_selected <- DFCEF[,c(1,2,3,5,10,11,12,13,14,15,17,20,21,22,23,31:44)]
 DFCEF_patient <- DFCEF_selected %>%
   distinct(ID, .keep_all = TRUE)
 
-library(gtsummary)
-library(gt)
+
 
 DFCEF_patient %>% 
 tbl_summary(sort = list(everything() ~ "frequency"),
