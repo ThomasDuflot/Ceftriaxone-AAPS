@@ -1,7 +1,7 @@
 # Define your list of libraries
 required_packages <- c(
   "ggplot2", "ggsci", "ggpubr", "reshape2", "cowplot","flextable', "forcats",
-  "dplyr", "gridExtra","gt", "gtsummary", "RColorBrewer", "ggcorrplot",
+  "dplyr", "gridExtra","gt", "gtsummary", "officer","RColorBrewer", "ggcorrplot",
   "exact2x2", "lmerTest", "multcomp"
 )
 
@@ -34,6 +34,7 @@ library(flextable)
 library(gridExtra)
 library(gt)
 library(gtsummary)
+library(officer)
 library(RColorBrewer)
 library(ggcorrplot)
 library(exact2x2)
@@ -223,7 +224,7 @@ p2 <- ggplot(subset(combined_df, Albuminemia == "35 g/L"), aes(x = CEFt, y = Fre
   )
 
 # Arrange p1 and p2 using ggarrange
-png(file = "PredictionsCombined.png", width = 16, height = 9, units = 'in', res = 600)
+png(file = "Figure 1.png", width = 16, height = 9, units = 'in', res = 600)
 ggarrange(p1, p2, ncol = 2, nrow = 1, common.legend = TRUE, legend = "right", labels = c("A", "B"), font.label = list(size = 20))
 dev.off()
 
@@ -327,14 +328,14 @@ DFPatient$Standing <- 0.5*((DFPatient$CefT-StandingBmax-StandingKd)+sqrt((DFPati
 ### ULLDEMOLINS ###
 DFPatient$Ulldemolins <- (1*exp(-0.82*(DFPatient$ALB/24.2)))*DFPatient$CefT
 
-write.csv2(DFPatient,"PatientPrediction.csv")
+
 
 # Calculate absolute and percentage error for each model prediction based on CefUnbound
 model_columns <- c('Bos', 'Dreesen', 'Gijsen', 'Gregoire', 'Hartmann', 'Heffernan', 'Leegwater', 'Standing', 'Ulldemolins')
 
 # Loop through each model column to create new columns for absolute and percentage error
 for (col in model_columns) {
-  DFPatient[[paste0(col, '_AbsError')]] <- abs(DFPatient$CefUnbound - DFPatient[[col]])
+  DFPatient[[paste0(col, '_AbsError')]] <- (DFPatient$CefUnbound - DFPatient[[col]])
   DFPatient[[paste0(col, '_PercError')]] <- (DFPatient[[paste0(col, '_AbsError')]] / DFPatient$CefUnbound) * 100
 }
 
@@ -348,7 +349,7 @@ model_columns <- c('Bos', 'Dreesen', 'Gijsen', 'Gregoire', 'Hartmann', 'Hefferna
 
 # Loop through each model column to create new columns for absolute and percentage error
 for (col in model_columns) {
-  DFPatient[[paste0(col, '_AbsError')]] <- abs(DFPatient$CefUnbound - DFPatient[[col]])
+  DFPatient[[paste0(col, '_AbsError')]] <- (DFPatient$CefUnbound - DFPatient[[col]])
   DFPatient[[paste0(col, '_PercError')]] <- (DFPatient[[paste0(col, '_AbsError')]] / DFPatient$CefUnbound) * 100
 }
 
@@ -360,14 +361,14 @@ DFPatient_long <- melt(DFPatient, id.vars = c('ID', 'CefT', 'CefUnbound', 'Depar
 
 # Extract model name and error type from variable
 DFPatient_long$Model <- gsub("_(AbsError|PercError)$", "", DFPatient_long$Model_ErrorType)
-DFPatient_long$ErrorType <- ifelse(grepl("AbsError", DFPatient_long$Model_ErrorType), "Absolute Error", "Percentage Error")
+DFPatient_long$ErrorType <- ifelse(grepl("AbsError", DFPatient_long$Model_ErrorType), "Signed Error", "Percentage Error")
 
 # Create individual plots
-library(ggplot2)
-p1 <- ggplot(subset(DFPatient_long, ErrorType == "Absolute Error"), aes(x = Model, y = ErrorValue, fill = Model)) +
+
+p1 <- ggplot(subset(DFPatient_long, ErrorType == "Signed Error"), aes(x = Model, y = ErrorValue, fill = Model)) +
   geom_boxplot(alpha = 0.7, outlier.shape = NA, color = "black", linewidth = 1.2) +
   geom_point(color = "black", position = position_jitterdodge(jitter.width = 0.1, dodge.width = 0.75), alpha = 1, size = 3, show.legend = FALSE) +
-  labs(title = "Absolute Error", x = "Prediction Model", y = "Error Value") +
+  labs(title = "Signed Error", x = "Prediction Model", y = "Signed Error (mg/L)") +
   scale_fill_jco() +
   theme(plot.margin = unit(c(1, 1, 2, 1), "cm"), 
     plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
@@ -387,7 +388,7 @@ p1 <- ggplot(subset(DFPatient_long, ErrorType == "Absolute Error"), aes(x = Mode
 p2 <- ggplot(subset(DFPatient_long, ErrorType == "Percentage Error"), aes(x = Model, y = ErrorValue, fill = Model)) +
   geom_boxplot(alpha = 0.7, outlier.shape = NA, color = "black", linewidth = 1.2) +
   geom_point(color = "black", position = position_jitterdodge(jitter.width = 0.1, dodge.width = 0.75), alpha = 1, size = 3, show.legend = FALSE) +
-  labs(title = "Percentage Error", x = "Prediction Model", y = "Error Value") +
+  labs(title = "Percentage Error", x = "Prediction Model", y = "Percentage Error (%)") +
   scale_fill_jco() +
   theme(
     plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
@@ -406,20 +407,27 @@ p2 <- ggplot(subset(DFPatient_long, ErrorType == "Percentage Error"), aes(x = Mo
 
 # Arrange plots using ggarrange
 
-png(file = "AEPE.png", width = 16, height = 12, units = 'in',res=600)
+png(file = "Figure 2 - AEPE.png", width = 16, height = 9, units = 'in',res=600)
 ggarrange(p1, p2, ncol = 1, nrow = 2, align = "v", common.legend = TRUE, legend = "right", heights = c(1, 1.05), labels = c("A", "B"), label.x = 0.05, label.y = 1, vjust = 1.5, font.label = list(size = 20))
 dev.off()
 
-
+write.csv2(DFPatient,"PatientPrediction.csv")
 
 # Calculate MAE, MPE, RMSE, and R-squared for each model using linear regression
 model_columns <- c('Bos', 'Dreesen', 'Gijsen', 'Gregoire', 'Hartmann', 'Heffernan', 'Leegwater', 'Standing', 'Ulldemolins')
 
-# Initialize a data frame to store results
-model_metrics <- data.frame(Model = character(), MAE = numeric(), MPE = numeric(), RMSE = numeric(), R_squared = numeric(), stringsAsFactors = FALSE)
+# Initialiser un data frame pour stocker les résultats
+model_metrics <- data.frame(
+  Model = character(),
+  MAE = numeric(),
+  MPE = numeric(),
+  RMSE = numeric(),
+  RMSE_Percentage = numeric(),  # Nouvelle colonne pour le RMSE en pourcentage
+  R_squared = numeric(),
+  stringsAsFactors = FALSE
+)
 
 for (model in model_columns) {
-  # Calculate errors
   abs_error <- DFPatient[[paste0(model, '_AbsError')]]
   perc_error <- DFPatient[[paste0(model, '_PercError')]]
   true_values <- DFPatient$CefUnbound
@@ -434,17 +442,31 @@ for (model in model_columns) {
   # Root Mean Square Error (RMSE)
   rmse <- sqrt(mean((true_values - predicted_values)^2, na.rm = TRUE))
   
+  rmse_perc <- sqrt(mean(perc_error^2, na.rm = TRUE))
+  
   # R-squared (R²) using correlation
   correlation <- cor(true_values, predicted_values, use = "complete.obs")
   r_squared <- correlation^2
   
-  # Append to results data frame
-  model_metrics <- rbind(model_metrics, data.frame(Model = model, MAE = mae, MPE = mpe, RMSE = rmse, R_squared = r_squared))
+
+  model_metrics <- rbind(
+    model_metrics,
+    data.frame(
+      Model = model,
+      MAE = mae,
+      MPE = mpe,
+      RMSE = rmse,
+      RMSE_Percentage = rmse_perc,
+      R_squared = r_squared
+    )
+  )
 }
+
+
 
 # Perform ANOVA and Tukey's HSD for Absolute and Percentage Error
 # ANOVA for Absolute Error
-anova_abs <- aov(ErrorValue ~ Model, data = subset(DFPatient_long, ErrorType == "Absolute Error"))
+anova_abs <- aov(ErrorValue ~ Model, data = subset(DFPatient_long, ErrorType == "Signed Error"))
 tukey_abs <- TukeyHSD(anova_abs)
 
 # ANOVA for Percentage Error
@@ -456,7 +478,7 @@ tukey_abs_df <- as.data.frame(tukey_abs$Model)
 tukey_perc_df <- as.data.frame(tukey_perc$Model)
 
 # Add columns to indicate error type
-tukey_abs_df$ErrorType <- "Absolute Error"
+tukey_abs_df$ErrorType <- "Signed Error"
 tukey_perc_df$ErrorType <- "Percentage Error"
 
 # Combine Tukey results
@@ -467,36 +489,74 @@ combined_tukey$Comparison <- gsub("1", "", rownames(combined_tukey))
 combined_tukey <- combined_tukey %>%
   mutate(bold = ifelse(`p adj` < 0.05, TRUE, FALSE))
 
-# Create a flextable for the combined results
+colnames(combined_tukey)[4] <-"p_adj"
+
+
+
+combined_tukey$diff <- round(combined_tukey$diff, 2)
+combined_tukey$lwr <- round(combined_tukey$lwr, 2)
+combined_tukey$upr <- round(combined_tukey$upr, 2)
+combined_tukey$p_adj <- formatC(combined_tukey$p_adj, format = "e", digits = 2)
+
+
+# Combine Tukey results
+combined_tukey <- rbind(tukey_abs_df, tukey_perc_df)
+combined_tukey$Comparison <- gsub("1", "", rownames(combined_tukey))
+
+# Highlight rows with p-values below 0.05
+combined_tukey <- combined_tukey %>%
+  mutate(bold = ifelse(`p adj` < 0.05, TRUE, FALSE))
+
+colnames(combined_tukey)[4] <-"p_adj"
+
+
+model_metrics$MAE <- round(model_metrics$MAE, 2)
+model_metrics$MPE <- round(model_metrics$MPE, 2)
+model_metrics$RMSE <- round(model_metrics$RMSE, 2)
+model_metrics$RMSE_Percentage <- round(model_metrics$RMSE_Percentage, 2)
+model_metrics$R_squared <- round(model_metrics$R_squared, 2)
+
+
+combined_tukey$diff <- round(combined_tukey$diff, 2)
+combined_tukey$lwr <- round(combined_tukey$lwr, 2)
+combined_tukey$upr <- round(combined_tukey$upr, 2)
+combined_tukey$p_adj <- formatC(combined_tukey$p_adj, format = "e", digits = 2)
+
+
 flextable_combined <- flextable(combined_tukey) %>%
   set_header_labels(
     Comparison = "Comparison",
     diff = "Difference",
     lwr = "Lower CI",
     upr = "Upper CI",
-    `p adj` = "Adjusted P-value",
+    p_adj = "Adjusted P-value",
     ErrorType = "Error Type"
   ) %>%
   bold(i = ~ bold == TRUE, bold = TRUE) %>%
   autofit()
 
-# Create a flextable for the model metrics
+
 flextable_metrics <- flextable(model_metrics) %>%
   set_header_labels(
     Model = "Prediction Model",
-    MAE = "Mean Absolute Error (MAE)",
+    MAE = "Mean Signed Error (MSE)",
     MPE = "Mean Percentage Error (MPE)",
     RMSE = "Root Mean Square Error (RMSE)",
+    RMSE_Percentage = "RMSE of Percentage Errors",
     R_squared = "R-Squared (R²)"
+  ) %>%
+  # Format numeric columns
+  colformat_num(
+    col_keys = c("MAE", "MPE", "RMSE", "RMSE_Percentage", "R_squared"),
+    digits = 2,
+    decimal.mark = "."
   ) %>%
   autofit()
 
-# Display the flextables
-print(flextable_combined)
-print(flextable_metrics)
+
+
 
 # Export the flextables to a Word document
-library(officer)
 doc <- read_docx() %>%
   body_add_flextable(flextable_combined) %>%
   body_add_par("
@@ -504,6 +564,7 @@ doc <- read_docx() %>%
   body_add_flextable(flextable_metrics)
 
 print(doc, target = "model_metrics_results.docx")
+
 
 
 ### BA plots ###
@@ -591,7 +652,7 @@ p1 <- ggplot(bland_altman_df, aes(x = mean_values, y = differences, color = Mode
   labs(
     title = "Bland-Altman Plot - Signed Differences",
     x = "Mean of Observed and Predicted",
-    y = "Difference (Observed - Predicted)"
+    y = "Error (Observed - Predicted) (mg/L)"
   ) +
   custom_theme +
   scale_color_jco() +  
@@ -606,9 +667,9 @@ p2 <- ggplot(bland_altman_df, aes(x = mean_values, y = perc_differences, color =
   geom_hline(data = stats_percentage, aes(yintercept = loa_lower), color = "darkgreen", linetype = "dashed", size = 0.8) +
   facet_wrap(~ Model, ncol = 9, scales = "free_y") +  # Set scales to free_y
   labs(
-    title = "Bland-Altman Plot - Relative Differences",
+    title = "Bland-Altman Plots - Relative Differences",
     x = "Mean of Observed and Predicted",
-    y = "Relative Difference (%)"
+    y = "Percentage Error (%)"
   ) +
   custom_theme +
   scale_color_jco() +  
@@ -619,7 +680,7 @@ spacer <- ggplot() +
   theme(plot.margin = unit(rep(0, 4), "cm"))
 
 
-png(file = "BA_plots.png", width = 27, height = 9, units = 'in', res = 600)
+png(file = "Fig S1 - BA_plots.png", width = 27, height = 9, units = 'in', res = 600)
 ggarrange(
   p1, spacer, p2, 
   ncol = 1, nrow = 3, 
@@ -953,7 +1014,7 @@ p7<-ggcorrplot(accuracy_matrix,tl.srt=90,tl.cex=16,
 p8 <- ggarrange(p6,p7,labels=c("B","C"))
 arranged_plots <-ggarrange(p5,p8,nrow=2,labels="AUTO")
 
-png(file = "FigX.png", width = 18, height = 18, units = 'in',res=600)
+png(file = "Fig3.png", width = 18, height = 18, units = 'in',res=600)
 arranged_plots
 dev.off()
 
