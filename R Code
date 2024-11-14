@@ -1,6 +1,6 @@
 # Define your list of libraries
 required_packages <- c(
-  "ggplot2", "ggsci", "ggpubr", "reshape2", "cowplot","flextable', "forcats",
+  "ggplot2", "ggsci", "ggpubr", "reshape2", "cowplot","flextable", "forcats",
   "dplyr", "gridExtra","gt", "gtsummary", "officer","RColorBrewer", "ggcorrplot",
   "exact2x2", "lmerTest", "multcomp"
 )
@@ -62,7 +62,7 @@ BosHypoAlb <-BosHypoAlbb*554.58
 StandingAlbN <- rep(35,3001) 
 StandingAlbHypo <- rep(20,3001) 
 StandingCEFt <- seq(from=0, to=300, by=0.1)
-StandingHill= -0.26
+StandingHill= 0.56
 StandingBmax = 22.89*((StandingAlbN/33.75)^StandingHill)
 StandingKd = 0.56
 StandingAlbN <- 0.5*((StandingCEFt-StandingBmax-StandingKd)+sqrt((StandingCEFt-StandingBmax-StandingKd)^2+4*StandingKd*StandingCEFt))
@@ -320,9 +320,9 @@ LeegwaterKd = 11.5
 DFPatient$Leegwater <- 0.5*((DFPatient$CefT-LeegwaterBmax-LeegwaterKd)+sqrt((DFPatient$CefT-LeegwaterBmax-LeegwaterKd)^2+4*LeegwaterKd*DFPatient$CefT))
 
 ### STANDING ###
-StandingHill=0.555443
-StandingBmax = 69.7743*((DFPatient$ALB/33.75)^StandingHill)
-StandingKd = 22.89	
+StandingHill=0.555
+StandingBmax = 22.89*((DFPatient$ALB/33.75)^StandingHill)
+StandingKd = 0.56
 DFPatient$Standing <- 0.5*((DFPatient$CefT-StandingBmax-StandingKd)+sqrt((DFPatient$CefT-StandingBmax-StandingKd)^2+4*StandingKd*DFPatient$CefT))
 
 ### ULLDEMOLINS ###
@@ -808,8 +808,8 @@ DFCEF$Leegwater <- 0.5*((DFCEF$CEFt-LeegwaterBmax-LeegwaterKd)+sqrt((DFCEF$CEFt-
 
 ### STANDING ###
 StandingHill=0.555443
-StandingBmax = 69.7743*((DFCEF$Albumin/33.75)^StandingHill)
-StandingKd = 22.89	
+StandingBmax = 22.89*((DFCEF$Albumin/33.75)^StandingHill)
+StandingKd = 0.56
 DFCEF$Standing <- 0.5*((DFCEF$CEFt-StandingBmax-StandingKd)+sqrt((DFCEF$CEFt-StandingBmax-StandingKd)^2+4*StandingKd*DFCEF$CEFt))
 
 
