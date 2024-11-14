@@ -62,9 +62,9 @@ BosHypoAlb <-BosHypoAlbb*554.58
 StandingAlbN <- rep(35,3001) 
 StandingAlbHypo <- rep(20,3001) 
 StandingCEFt <- seq(from=0, to=300, by=0.1)
-StandingHill=0.555443
-StandingBmax = 69.7743*((StandingAlbN/33.75)^StandingHill)
-StandingKd = 22.89	
+StandingHill= -0.26
+StandingBmax = 22.89*((StandingAlbN/33.75)^StandingHill)
+StandingKd = 0.56
 StandingAlbN <- 0.5*((StandingCEFt-StandingBmax-StandingKd)+sqrt((StandingCEFt-StandingBmax-StandingKd)^2+4*StandingKd*StandingCEFt))
 StandingHypoBmax = 22.89*((StandingAlbHypo/33.75)^StandingHill)
 StandingHypoAlb <- 0.5*((StandingCEFt-StandingHypoBmax-StandingKd)+sqrt((StandingCEFt-StandingHypoBmax-StandingKd)^2+4*StandingKd*StandingCEFt))
