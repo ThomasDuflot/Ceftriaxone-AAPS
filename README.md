@@ -1,6 +1,7 @@
 # Ceftriaxone AAC
 
-## This repository was created to reproduce all results from the following research article. It contains raw data as well as R code, ensuring transparency of the results. In this context, the repository includes:
+## This repository was created to reproduce all results from [GitHub Pages](https://pages.github.com/). 
+## It contains raw data as well as R code, ensuring transparency of the results. In this context, the repository includes:
 
 ###  - Unbound Ceftriaxone Calcular.xlsx : This excel sheet allows to compute the unbound ceftriaxone from total ceftriaxone and albuminemia
   
@@ -10,7 +11,7 @@
     
 ###  - R Code : Used for statistical analyses, plots and tables export.</h4>
 
-### If you use data from this repository, please cite ###
+### If you use data from this repository, please cite [GitHub Pages](https://pages.github.com/)
 
 ## WARNING!
 ### All results from this repository have been produced for research purposes only. Although they are based on models built from clinical data, they should not be used as a clinical tool!
