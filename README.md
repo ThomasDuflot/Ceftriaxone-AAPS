@@ -13,4 +13,4 @@ If you use data from this repository, please cite
 #WARNING !
 All results issued from this repository has been performed for research purposes. Although they are based on models built from clinical data, they should not be used as a clinical tool !
 
-<span style="font-size:20px">This is 20px text</span>
+<span style="font-size:60px">This is 20px text</span>
