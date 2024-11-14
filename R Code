@@ -274,7 +274,7 @@ sd(result_df2[10:18,2])/mean(result_df2[10:18,2])*100
 
 
 
-setwd("D:/MOBILITE/JAC/AAC/R1")
+
 
 
 DFPatient<-read.csv2("Supplementary File S3 - External Validation.csv")
