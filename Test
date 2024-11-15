@@ -1,0 +1,1427 @@
+# Define your list of libraries
+required_packages <- c(
+  "ggplot2", "ggsci", "ggpubr", "reshape2", "cowplot","flextable", "forcats",
+  "dplyr", "gridExtra","gt", "gtsummary", "officer","RColorBrewer", "ggcorrplot",
+  "exact2x2", "lmerTest", "multcomp"
+)
+
+# Function to check for installed packages and install missing ones
+install_if_missing <- function(packages) {
+  # Identify packages that are not installed
+  new_packages <- packages[!(packages %in% installed.packages()[, "Package"])]
+  
+  # Install missing packages
+  if (length(new_packages)) {
+    install.packages(new_packages)
+  }
+  
+  # Load all required packages
+  invisible(lapply(packages, library, character.only = TRUE))
+}
+
+# Install and load packages
+install_if_missing(required_packages)
+
+
+library(ggplot2)
+library(ggsci)
+library(ggpubr)
+library(reshape2)
+library(cowplot)
+library(forcats)
+library(dplyr)
+library(flextable)
+library(gridExtra)
+library(gt)
+library(gtsummary)
+library(officer)
+library(RColorBrewer)
+library(ggcorrplot)
+library(exact2x2)
+library(lmerTest)
+library(multcomp)
+
+####################### Unbound ceftriaxone modeling ####################### 
+### BOS ###
+BosAlbN <- rep(35,3001) 			
+BosAlbNM <- BosAlbN/66.5 		
+BosAlbHypo <- rep(20,3001) 			
+BosAlbHypoM <- BosAlbHypo/66.5			
+BosCEFt <- seq(from=0, to=300, by=0.1)		
+BosCEFtM <-BosCEFt/554.58			
+BosHill=1.3					
+BosBmax = 0.12*((BosAlbNM/0.42)^BosHill)	
+BosKm = 0.0092					
+BosAlbNb <- 0.5*((BosCEFtM-BosBmax-BosKm)+sqrt((BosCEFtM-BosBmax-BosKm)^2+4*BosKm*BosCEFtM)) 
+BosAlbN <- BosAlbNb*554.58
+BosHypoBmax = 0.12*((BosAlbHypoM/0.42)^BosHill)	
+BosHypoAlbb <- 0.5*((BosCEFtM-BosHypoBmax-BosKm)+sqrt((BosCEFtM-BosHypoBmax-BosKm)^2+4*BosKm*BosCEFtM))
+BosHypoAlb <-BosHypoAlbb*554.58
+
+### STANDING ###
+StandingAlbN <- rep(35,3001) 
+StandingAlbHypo <- rep(20,3001) 
+StandingCEFt <- seq(from=0, to=300, by=0.1)
+StandingHill= 0.56
+StandingBmax = 22.89*((StandingAlbN/33.75)^StandingHill)
+StandingKd = 0.56
+StandingAlbN <- 0.5*((StandingCEFt-StandingBmax-StandingKd)+sqrt((StandingCEFt-StandingBmax-StandingKd)^2+4*StandingKd*StandingCEFt))
+StandingHypoBmax = 22.89*((StandingAlbHypo/33.75)^StandingHill)
+StandingHypoAlb <- 0.5*((StandingCEFt-StandingHypoBmax-StandingKd)+sqrt((StandingCEFt-StandingHypoBmax-StandingKd)^2+4*StandingKd*StandingCEFt))
+
+
+### GREGOIRE ###
+GregoireAlbN <- rep(35,3001) 
+GregoireAlbHypo <- rep(20,3001) 
+GregoireCEFt <- seq(from=0, to=300, by=0.1)
+GregoireFb <- -5*10^-9*(GregoireCEFt^3)+6*10^-7*(GregoireCEFt^2)-0.0004*GregoireCEFt+0.9393
+GregoireAlbN <-(1-GregoireFb)*GregoireCEFt
+GregoireHypoAlb <-(1-GregoireFb)*GregoireCEFt
+
+### LEEGWATER ###
+LeegwaterAlbN <- rep(35,3001) 
+LeegwaterAlbHypo <- rep(20,3001)
+LeegwaterCEFt <- seq(from=0, to=300, by=0.1)
+LeegwaterBMAX = 113
+LeegwaterALBBMAX = 1+(0.04*(LeegwaterAlbN-29))
+LeegwaterBmax = LeegwaterBMAX*LeegwaterALBBMAX
+LeegwaterKd = 11.5
+LeegwaterAlbN <- 0.5*((LeegwaterCEFt-LeegwaterBmax-LeegwaterKd)+sqrt((LeegwaterCEFt-LeegwaterBmax-LeegwaterKd)^2+4*LeegwaterKd*LeegwaterCEFt))
+LeegwaterHypoALBBMAX = 1+(0.04*(LeegwaterAlbHypo-29))
+LeegwaterHypoBmax = LeegwaterBMAX*LeegwaterHypoALBBMAX
+LeegwaterHypoAlb <- 0.5*((LeegwaterCEFt-LeegwaterHypoBmax-LeegwaterKd)+sqrt((LeegwaterCEFt-LeegwaterHypoBmax-LeegwaterKd)^2+4*LeegwaterKd*LeegwaterCEFt))
+
+
+### GIJSEN###
+GijsenAlbN <- rep(35,3001) 			
+GijsenAlbNM <- GijsenAlbN/66.5 			
+GijsenAlbHypo <- rep(20,3001) 			
+GijsenAlbHypoM <- GijsenAlbHypo/66.5		
+GijsenCEFt <- seq(from=0, to=300, by=0.1)	
+GijsenCEFtM <-GijsenCEFt/554.58			
+GijsenHill=0.26					
+GijsenBmax = -0.64*((GijsenAlbNM/0.44)^GijsenHill)
+GijsenKm = 1.09					
+GijsenAlbNb <- GijsenBmax*GijsenCEFtM+GijsenCEFtM^GijsenKm
+GijsenAlbN <- GijsenAlbNb*554.58
+GijsenHypoBmax = -0.64*((GijsenAlbHypoM/0.44)^GijsenHill)		
+GijsenHypoAlbb <- GijsenHypoBmax*GijsenCEFtM+GijsenCEFtM^GijsenKm 
+GijsenHypoAlb<-GijsenHypoAlbb*554.58
+
+
+### Hartman ###
+HartmanAlbN <- rep(35,3001) 
+HartmanAlbHypo <- rep(20,3001) 
+HartmanCEFt <- seq(from=0, to=300, by=0.1)
+HartmanHill= 1
+HartmanBmax = 223*((HartmanAlbN/27)^HartmanHill)
+HartmanKd = 30.3	
+HartmanAlbN <- 0.5*((HartmanCEFt-HartmanBmax-HartmanKd)+sqrt((HartmanCEFt-HartmanBmax-HartmanKd)^2+4*HartmanKd*HartmanCEFt))
+HartmanHypoBmax = 223*((HartmanAlbHypo/27)^HartmanHill)
+HartmanHypoAlb <- 0.5*((HartmanCEFt-HartmanHypoBmax-HartmanKd)+sqrt((HartmanCEFt-HartmanHypoBmax-HartmanKd)^2+4*HartmanKd*HartmanCEFt))
+
+
+### ULLDEMOLINS ###
+UlldemolinsAlbN <- rep(35,3001) 
+UlldemolinsAlbHypo <- rep(20,3001) 
+UlldemolinsCEFt <- seq(from=0, to=300, by=0.1)
+UlldemolinsAlbNFu <- 1*exp(-0.82*(UlldemolinsAlbN/24.2))
+UlldemolinsAlbN <- UlldemolinsAlbNFu*UlldemolinsCEFt
+UlldemolinsAlbHypoFu <- 1*exp(-0.82*(UlldemolinsAlbHypo/24.2))
+UlldemolinsHypoAlb <- UlldemolinsAlbHypoFu*UlldemolinsCEFt
+
+
+### DREESEN ###
+DreesenAlbN <- rep(35,3001) 				
+DreesenAlbNM <- DreesenAlbN/66.5 		
+DreesenAlbHypo <- rep(20,3001) 				
+DreesenAlbHypoM <- DreesenAlbHypo/66.5			
+DreesenCEFt <- seq(from=0, to=300, by=0.1)		
+DreesenCEFtM <-DreesenCEFt/554.58			
+DreesenHill=1					
+DreesenBmax = 0.771*DreesenAlbNM			
+DreesenKm = 0.053					
+DreesenAlbNb <- 0.5*((DreesenCEFtM-DreesenBmax-DreesenKm)+sqrt((DreesenCEFtM-DreesenBmax-DreesenKm)^2+4*DreesenKm*DreesenCEFtM)) 
+DreesenAlbN <- DreesenAlbNb*554.58
+DreesenHypoBmax = 0.771*DreesenAlbHypoM			
+DreesenHypoAlbb <- 0.5*((DreesenCEFtM-DreesenHypoBmax-DreesenKm)+sqrt((DreesenCEFtM-DreesenHypoBmax-DreesenKm)^2+4*DreesenKm*DreesenCEFtM))
+DreesenHypoAlb <- DreesenHypoAlbb*554.58
+
+
+### HEFFERNAN ###
+HeffernanAlbN <- rep(35,3001) 
+HeffernanAlbHypo <- rep(20,3001) 
+HeffernanCEFt <- seq(from=0, to=300, by=0.1)
+HeffernanHill= 1
+HeffernanBmax = HeffernanAlbN*0.82*(554.6/66500)*1000
+HeffernanKd = 18537.17/1290.19	
+HeffernanAlbN <- 0.5*((HeffernanCEFt-HeffernanBmax-HeffernanKd)+sqrt((HeffernanCEFt-HeffernanBmax-HeffernanKd)^2+4*HeffernanKd*HeffernanCEFt))
+HeffernanHypoBmax = HeffernanAlbHypo*0.82*(554.6/66500)*1000
+HeffernanHypoAlb <- 0.5*((HeffernanCEFt-HeffernanHypoBmax-HeffernanKd)+sqrt((HeffernanCEFt-HeffernanHypoBmax-HeffernanKd)^2+4*HeffernanKd*HeffernanCEFt))
+
+
+
+### ThomasNAN ###
+ThomasanAlbN <- rep(35,3001) 
+ThomasanAlbHypo <- rep(20,3001) 
+ThomasanCEFt <- seq(from=0, to=300, by=0.1)
+ThomasanHill= 1.4206
+ThomasanBmax = 161.1309*((ThomasanAlbN/27)^ThomasanHill)
+ThomasanKd = 13.81
+ThomasanAlbN <- 0.5*((ThomasanCEFt-ThomasanBmax-ThomasanKd)+sqrt((ThomasanCEFt-ThomasanBmax-ThomasanKd)^2+4*ThomasanKd*ThomasanCEFt))
+ThomasanHypoBmax = 161.1309*((ThomasanAlbHypo/27)^ThomasanHill)
+ThomasanHypoAlb <- 0.5*((ThomasanCEFt-ThomasanHypoBmax-ThomasanKd)+sqrt((ThomasanCEFt-ThomasanHypoBmax-ThomasanKd)^2+4*ThomasanKd*ThomasanCEFt))
+
+
+
+DF <- data.frame(ThomasnanAlbN,BosAlbN, StandingAlbN, GregoireAlbN, LeegwaterAlbN, GijsenAlbN,HartmanAlbN, UlldemolinsAlbN, DreesenAlbN,HeffernanAlbN, ThomasnanHypoAlb, BosHypoAlb, StandingHypoAlb, GregoireHypoAlb, LeegwaterHypoAlb, GijsenHypoAlb,HartmanHypoAlb, UlldemolinsHypoAlb, DreesenHypoAlb,HeffernanHypoAlb)
+DF_long <- melt(DF) 
+DF_long$Method<- as.factor(rep(c("Thomas","Bos","Standing","Gregoire","Leegwater","Gijsen","Hartman","Ulldemolins","Dreesen","Heffernan","Thomas","Bos","Standing","Gregoire","Leegwater","Gijsen","Hartman","Ulldemolins","Dreesen","Heffernan"),each=3001))
+DF_long$CEFt <- rep(BosCEFt,20)
+DF_long$Albuminemia<- as.factor(rep(c("35 g/L","20 g/L"),each=3001*10))
+colnames(DF_long)<-c("Variable","CEFu","Model","CEFt","Albuminemia")
+
+DF_long_AlbN <- DF_long[which(DF_long$Albuminemia == "35 g/L"),]
+
+DF_long_HypoAlb <- DF_long[which(DF_long$Albuminemia == "20 g/L"),]
+
+combined_df <- rbind(DF_long_AlbN, DF_long_HypoAlb)
+combined_df$FreeFraction<-(combined_df$CEFu/combined_df$CEFt)*100
+
+
+# Create p1 for Hypoalbuminemia
+p1 <- ggplot(subset(combined_df, Albuminemia == "20 g/L"), aes(x = CEFt, y = FreeFraction, color = Model)) +  
+  geom_line(size = 1) + 
+  scale_y_continuous(breaks = seq(0, 100, by = 10), limits = c(0, 100)) +
+  scale_color_jco() +
+  scale_x_continuous(breaks = seq(0, 300, by = 25), limits = c(0, 300)) +
+  ggtitle("Hypoalbuminemia (20 g/L)") +
+  xlab("Total Ceftriaxone (mg/L)") + 
+  ylab("Ceftriaxone free fraction (%)") +
+  theme(
+    panel.spacing = unit(2, "cm"), 
+    axis.title.x = element_text(size = 18, face = "bold"),
+    axis.title.y = element_text(size = 18, face = "bold"),
+    panel.grid.minor = element_line(colour = "gray90"),
+    panel.grid.major = element_line(colour = "gray80"),
+    panel.background = element_blank(),
+    axis.line = element_line(colour = "black", size = 2),
+    axis.text = element_text(size = 18, face = "bold"),
+    strip.text = element_text(size = 20, face = "bold"),
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    legend.title = element_text(size = 20),
+    legend.text = element_text(size = 20)
+  )
+
+# Create p2 for Normal Albuminemia
+p2 <- ggplot(subset(combined_df, Albuminemia == "35 g/L"), aes(x = CEFt, y = FreeFraction, color = Model)) +  
+  geom_line(size = 1) + 
+  scale_y_continuous(breaks = seq(0, 100, by = 10), limits = c(0, 100)) +
+  scale_color_jco() +
+  scale_x_continuous(breaks = seq(0, 300, by = 25), limits = c(0, 300)) +
+  ggtitle("Normal Albuminemia (35 g/L)") +
+  xlab("Total Ceftriaxone (mg/L)") + 
+  ylab("Ceftriaxone free fraction (%)") +
+  theme(
+    panel.spacing = unit(2, "cm"), 
+    axis.title.x = element_text(size = 18, face = "bold"),
+    axis.title.y = element_text(size = 18, face = "bold"),
+    panel.grid.minor = element_line(colour = "gray90"),
+    panel.grid.major = element_line(colour = "gray80"),
+    panel.background = element_blank(),
+    axis.line = element_line(colour = "black", size = 2),
+    axis.text = element_text(size = 18, face = "bold"),
+    strip.text = element_text(size = 20, face = "bold"),
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    legend.title = element_text(size = 20),
+    legend.text = element_text(size = 20)
+  )
+
+# Arrange p1 and p2 using ggarrange
+png(file = "D:/Z.png", width = 16, height = 9, units = 'in', res = 600)
+ggarrange(p1, p2, ncol = 2, nrow = 1, common.legend = TRUE, legend = "right", labels = c("A", "B"), font.label = list(size = 20))
+dev.off()
+
+
+####################### CEFt optimal thresholds ####################### 
+
+DF2 <- DF
+DF2$CEFt <- BosCEFt
+
+column_names <- colnames(DF2)  
+ceft_values <- numeric(length(column_names))
+for (i in seq_along(column_names)) {
+  column_values <- DF2[[i]]  
+  index <- which(column_values >= 1)[1] 
+  ceft_values[i] <- DF2$CEFt[index] 
+}
+result_df <- data.frame(Column = column_names, CEFtValue = ceft_values)
+print(result_df)
+
+mean(result_df[1:9,2])
+sd(result_df[1:9,2])
+sd(result_df[1:9,2])/mean(result_df[1:9,2])*100
+
+mean(result_df[10:18,2])
+sd(result_df[10:18,2])
+sd(result_df[10:18,2])/mean(result_df[10:18,2])*100
+
+
+for (i in seq_along(column_names)) {
+  column_values <- DF2[[i]]  # Get the values of the current column
+  index <- which(column_values >= 4)[1]  # Find the index of the first value greater than or equal to 1
+  ceft_values[i] <- DF2$CEFt[index]  # Store the corresponding CEFt value
+}
+
+# Create a data frame with column names and corresponding CEFt values
+result_df2 <- data.frame(Column = column_names, CEFtValue = ceft_values)
+print(result_df2)
+
+mean(result_df2[1:9,2])
+sd(result_df2[1:9,2])
+sd(result_df2[1:9,2])/mean(result_df2[1:9,2])*100
+
+mean(result_df2[10:18,2])
+sd(result_df2[10:18,2])
+sd(result_df2[10:18,2])/mean(result_df2[10:18,2])*100
+
+
+
+
+
+
+
+DFPatient<-read.csv2("Supplementary File S3 - External Validation.csv")
+char_columns <- sapply(DFPatient, is.character)
+DFPatient[char_columns] <- lapply(DFPatient[char_columns], as.factor)
+
+
+### BOS ###
+BosBmax = 0.12*(((DFPatient$ALB/66.5)/0.42)^BosHill)	
+BosKm = 0.0092		
+DFPatient$Bos <-(0.5*(sqrt((DFPatient$CefT/554.58)^2-(BosBmax-BosKm)*2*(DFPatient$CefT/554.58)+(BosBmax+BosKm)^2)+(DFPatient$CefT/554.58)-(BosBmax+BosKm)))*554.58
+
+### DREESEN ###
+DreesenBmax = 0.771*(DFPatient$ALB/66.5)		
+DreesenKm = 0.053				
+DFPatient$Dreesen <- 0.5*(((DFPatient$CefT/554.58)-DreesenBmax-DreesenKm)+sqrt(((DFPatient$CefT/554.58)-DreesenBmax-DreesenKm)^2+4*DreesenKm*(DFPatient$CefT/554.58)))*554.58 
+
+### GIJSEN###
+GijsenHill=0.26					
+GijsenBmax = -0.64*(((DFPatient$ALB/66.5)/0.44)^GijsenHill)
+GijsenKm = 1.09				
+DFPatient$Gijsen <- (GijsenBmax*(DFPatient$CefT/554.58)+(DFPatient$CefT/554.58)^GijsenKm)*554.58
+
+### GREGOIRE ###
+DFPatient$Gregoire <- (1-(-5*10^-9*(DFPatient$CefT^3)+6*10^-7*(DFPatient$CefT^2)-0.0004*DFPatient$CefT+0.9393))*DFPatient$CefT
+
+### Hartman ###
+HartmanHill= 1
+HartmanBmax = 223*((DFPatient$ALB/27)^HartmanHill)
+HartmanKd = 30.3	
+DFPatient$Hartman <- 0.5*((DFPatient$CefT-HartmanBmax-HartmanKd)+sqrt((DFPatient$CefT-HartmanBmax-HartmanKd)^2+4*HartmanKd*DFPatient$CefT))
+
+### HEFFERNAN ###
+HeffernanBmax = DFPatient$ALB*0.82*(554.6/66500)*1000
+HeffernanKd = 18537.17/1290.19	
+DFPatient$Heffernan <- 0.5*((DFPatient$CefT-HeffernanBmax-HeffernanKd)+sqrt((DFPatient$CefT-HeffernanBmax-HeffernanKd)^2+4*HeffernanKd*DFPatient$CefT))
+
+### LEEGWATER ###
+LeegwaterBMAX = 113
+LeegwaterALBBMAX = 1+(0.04*(DFPatient$ALB-29))
+LeegwaterBmax = LeegwaterBMAX*LeegwaterALBBMAX
+LeegwaterKd = 11.5
+DFPatient$Leegwater <- 0.5*((DFPatient$CefT-LeegwaterBmax-LeegwaterKd)+sqrt((DFPatient$CefT-LeegwaterBmax-LeegwaterKd)^2+4*LeegwaterKd*DFPatient$CefT))
+
+### STANDING ###
+StandingHill=0.555
+StandingBmax = 22.89*((DFPatient$ALB/33.75)^StandingHill)
+StandingKd = 0.56
+DFPatient$Standing <- 0.5*((DFPatient$CefT-StandingBmax-StandingKd)+sqrt((DFPatient$CefT-StandingBmax-StandingKd)^2+4*StandingKd*DFPatient$CefT))
+
+### ULLDEMOLINS ###
+DFPatient$Ulldemolins <- (1*exp(-0.82*(DFPatient$ALB/24.2)))*DFPatient$CefT
+
+
+
+# Calculate absolute and percentage error for each model prediction based on CefUnbound
+model_columns <- c('Bos', 'Dreesen', 'Gijsen', 'Gregoire', 'Hartman', 'Heffernan', 'Leegwater', 'Standing', 'Ulldemolins')
+
+# Loop through each model column to create new columns for absolute and percentage error
+for (col in model_columns) {
+  DFPatient[[paste0(col, '_AbsError')]] <- (DFPatient$CefUnbound - DFPatient[[col]])
+  DFPatient[[paste0(col, '_PercError')]] <- (DFPatient[[paste0(col, '_AbsError')]] / DFPatient$CefUnbound) * 100
+}
+
+# Print the updated dataframe structure
+print(head(DFPatient))
+
+
+
+# Calculate absolute and percentage error for each model prediction based on CefUnbound
+model_columns <- c('Bos', 'Dreesen', 'Gijsen', 'Gregoire', 'Hartman', 'Heffernan', 'Leegwater', 'Standing', 'Ulldemolins')
+
+# Loop through each model column to create new columns for absolute and percentage error
+for (col in model_columns) {
+  DFPatient[[paste0(col, '_AbsError')]] <- (DFPatient$CefUnbound - DFPatient[[col]])
+  DFPatient[[paste0(col, '_PercError')]] <- (DFPatient[[paste0(col, '_AbsError')]] / DFPatient$CefUnbound) * 100
+}
+
+# Convert data to long format for visualization
+library(reshape2)
+DFPatient_long <- melt(DFPatient, id.vars = c('ID', 'CefT', 'CefUnbound', 'Department', 'Sex', 'Age', 'ALB'), 
+                       measure.vars = c(paste0(model_columns, '_AbsError'), paste0(model_columns, '_PercError')),
+                       variable.name = 'Model_ErrorType', value.name = 'ErrorValue')
+
+# Extract model name and error type from variable
+DFPatient_long$Model <- gsub("_(AbsError|PercError)$", "", DFPatient_long$Model_ErrorType)
+DFPatient_long$ErrorType <- ifelse(grepl("AbsError", DFPatient_long$Model_ErrorType), "Signed Error", "Percentage Error")
+
+# Create individual plots
+
+p1 <- ggplot(subset(DFPatient_long, ErrorType == "Signed Error"), aes(x = Model, y = ErrorValue, fill = Model)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA, color = "black", linewidth = 1.2) +
+  geom_point(color = "black", position = position_jitterdodge(jitter.width = 0.1, dodge.width = 0.75), alpha = 1, size = 3, show.legend = FALSE) +
+  labs(title = "Signed Error", x = "Prediction Model", y = "Signed Error (mg/L)") +
+  scale_fill_jco() +
+  theme(plot.margin = unit(c(1, 1, 2, 1), "cm"), 
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    axis.title.x = element_text(size = 18, face = "bold"),
+    axis.title.y = element_text(size = 18, face = "bold"),
+    panel.grid.minor = element_line(colour = "gray90"),
+    panel.grid.major = element_line(colour = "gray80"),
+    panel.background = element_blank(),
+    axis.line = element_line(colour = "black", size = 2),
+    axis.text = element_text(size = 18, face = "bold"),
+    legend.title = element_text(size = 20),
+    legend.text = element_text(size = 20),
+    strip.background = element_rect(fill = "grey90", color = "grey50"),
+    strip.text = element_text(face = "bold", color = "black", size = 20)
+  )
+
+p2 <- ggplot(subset(DFPatient_long, ErrorType == "Percentage Error"), aes(x = Model, y = ErrorValue, fill = Model)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA, color = "black", linewidth = 1.2) +
+  geom_point(color = "black", position = position_jitterdodge(jitter.width = 0.1, dodge.width = 0.75), alpha = 1, size = 3, show.legend = FALSE) +
+  labs(title = "Percentage Error", x = "Prediction Model", y = "Percentage Error (%)") +
+  scale_fill_jco() +
+  theme(
+    plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+    axis.title.x = element_text(size = 18, face = "bold"),
+    axis.title.y = element_text(size = 18, face = "bold"),
+    panel.grid.minor = element_line(colour = "gray90"),
+    panel.grid.major = element_line(colour = "gray80"),
+    panel.background = element_blank(),
+    axis.line = element_line(colour = "black", size = 2),
+    axis.text = element_text(size = 18, face = "bold"),
+    legend.title = element_text(size = 20),
+    legend.text = element_text(size = 20),
+    strip.background = element_rect(fill = "grey90", color = "grey50"),
+    strip.text = element_text(face = "bold", color = "black", size = 20)
+  )
+
+# Arrange plots using ggarrange
+
+png(file = "Figure 2 - AEPE.png", width = 16, height = 9, units = 'in',res=600)
+ggarrange(p1, p2, ncol = 1, nrow = 2, align = "v", common.legend = TRUE, legend = "right", heights = c(1, 1.05), labels = c("A", "B"), label.x = 0.05, label.y = 1, vjust = 1.5, font.label = list(size = 20))
+dev.off()
+
+write.csv2(DFPatient,"PatientPrediction.csv")
+
+# Calculate MAE, MPE, RMSE, and R-squared for each model using linear regression
+model_columns <- c('Bos', 'Dreesen', 'Gijsen', 'Gregoire', 'Hartman', 'Heffernan', 'Leegwater', 'Standing', 'Ulldemolins')
+
+# Initialiser un data frame pour stocker les résultats
+model_metrics <- data.frame(
+  Model = character(),
+  MAE = numeric(),
+  MPE = numeric(),
+  RMSE = numeric(),
+  RMSE_Percentage = numeric(),  # Nouvelle colonne pour le RMSE en pourcentage
+  R_squared = numeric(),
+  stringsAsFactors = FALSE
+)
+
+for (model in model_columns) {
+  abs_error <- DFPatient[[paste0(model, '_AbsError')]]
+  perc_error <- DFPatient[[paste0(model, '_PercError')]]
+  true_values <- DFPatient$CefUnbound
+  predicted_values <- DFPatient[[model]]
+  
+  # Mean Absolute Error (MAE)
+  mae <- mean(abs_error, na.rm = TRUE)
+  
+  # Mean Percentage Error (MPE)
+  mpe <- mean(perc_error, na.rm = TRUE)
+  
+  # Root Mean Square Error (RMSE)
+  rmse <- sqrt(mean((true_values - predicted_values)^2, na.rm = TRUE))
+  
+  rmse_perc <- sqrt(mean(perc_error^2, na.rm = TRUE))
+  
+  # R-squared (R²) using correlation
+  correlation <- cor(true_values, predicted_values, use = "complete.obs")
+  r_squared <- correlation^2
+  
+
+  model_metrics <- rbind(
+    model_metrics,
+    data.frame(
+      Model = model,
+      MAE = mae,
+      MPE = mpe,
+      RMSE = rmse,
+      RMSE_Percentage = rmse_perc,
+      R_squared = r_squared
+    )
+  )
+}
+
+
+
+# Perform ANOVA and Tukey's HSD for Absolute and Percentage Error
+# ANOVA for Absolute Error
+anova_abs <- aov(ErrorValue ~ Model, data = subset(DFPatient_long, ErrorType == "Signed Error"))
+tukey_abs <- TukeyHSD(anova_abs)
+
+# ANOVA for Percentage Error
+anova_perc <- aov(ErrorValue ~ Model, data = subset(DFPatient_long, ErrorType == "Percentage Error"))
+tukey_perc <- TukeyHSD(anova_perc)
+
+# Convert Tukey results to data frames for merging
+tukey_abs_df <- as.data.frame(tukey_abs$Model)
+tukey_perc_df <- as.data.frame(tukey_perc$Model)
+
+# Add columns to indicate error type
+tukey_abs_df$ErrorType <- "Signed Error"
+tukey_perc_df$ErrorType <- "Percentage Error"
+
+# Combine Tukey results
+combined_tukey <- rbind(tukey_abs_df, tukey_perc_df)
+combined_tukey$Comparison <- gsub("1", "", rownames(combined_tukey))
+
+# Highlight rows with p-values below 0.05
+combined_tukey <- combined_tukey %>%
+  mutate(bold = ifelse(`p adj` < 0.05, TRUE, FALSE))
+
+colnames(combined_tukey)[4] <-"p_adj"
+
+
+
+combined_tukey$diff <- round(combined_tukey$diff, 2)
+combined_tukey$lwr <- round(combined_tukey$lwr, 2)
+combined_tukey$upr <- round(combined_tukey$upr, 2)
+combined_tukey$p_adj <- formatC(combined_tukey$p_adj, format = "e", digits = 2)
+
+
+# Combine Tukey results
+combined_tukey <- rbind(tukey_abs_df, tukey_perc_df)
+combined_tukey$Comparison <- gsub("1", "", rownames(combined_tukey))
+
+# Highlight rows with p-values below 0.05
+combined_tukey <- combined_tukey %>%
+  mutate(bold = ifelse(`p adj` < 0.05, TRUE, FALSE))
+
+colnames(combined_tukey)[4] <-"p_adj"
+
+
+model_metrics$MAE <- round(model_metrics$MAE, 2)
+model_metrics$MPE <- round(model_metrics$MPE, 2)
+model_metrics$RMSE <- round(model_metrics$RMSE, 2)
+model_metrics$RMSE_Percentage <- round(model_metrics$RMSE_Percentage, 2)
+model_metrics$R_squared <- round(model_metrics$R_squared, 2)
+
+
+combined_tukey$diff <- round(combined_tukey$diff, 2)
+combined_tukey$lwr <- round(combined_tukey$lwr, 2)
+combined_tukey$upr <- round(combined_tukey$upr, 2)
+combined_tukey$p_adj <- formatC(combined_tukey$p_adj, format = "e", digits = 2)
+
+
+flextable_combined <- flextable(combined_tukey) %>%
+  set_header_labels(
+    Comparison = "Comparison",
+    diff = "Difference",
+    lwr = "Lower CI",
+    upr = "Upper CI",
+    p_adj = "Adjusted P-value",
+    ErrorType = "Error Type"
+  ) %>%
+  bold(i = ~ bold == TRUE, bold = TRUE) %>%
+  autofit()
+
+
+flextable_metrics <- flextable(model_metrics) %>%
+  set_header_labels(
+    Model = "Prediction Model",
+    MAE = "Mean Signed Error (MSE)",
+    MPE = "Mean Percentage Error (MPE)",
+    RMSE = "Root Mean Square Error (RMSE)",
+    RMSE_Percentage = "RMSE of Percentage Errors",
+    R_squared = "R-Squared (R²)"
+  ) %>%
+  # Format numeric columns
+  colformat_num(
+    col_keys = c("MAE", "MPE", "RMSE", "RMSE_Percentage", "R_squared"),
+    digits = 2,
+    decimal.mark = "."
+  ) %>%
+  autofit()
+
+
+
+
+# Export the flextables to a Word document
+doc <- read_docx() %>%
+  body_add_flextable(flextable_combined) %>%
+  body_add_par("
+") %>%
+  body_add_flextable(flextable_metrics)
+
+print(doc, target = "model_metrics_results.docx")
+
+
+
+### BA plots ###
+
+# Define your custom theme
+custom_theme <- theme(
+  panel.spacing = unit(1, "cm"), 
+  axis.title.x = element_text(size = 18, face = "bold"),
+  axis.title.y = element_text(size = 18, face = "bold"),
+  panel.grid.minor = element_line(colour = "gray90"),
+  panel.grid.major = element_line(colour = "gray80"),
+  panel.background = element_blank(),
+  axis.line = element_line(colour = "black", size = 1),
+  axis.text = element_text(size = 14, face = "bold"),
+  strip.text = element_text(size = 16, face = "bold"),
+  plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+  legend.title = element_text(size = 16),
+  legend.text = element_text(size = 14)
+)
+
+# Your observed data
+observed <- DFPatient$CefUnbound
+
+# List of model names
+model_columns <- c("Bos", "Dreesen", "Gijsen", "Gregoire", "Hartman", 
+                   "Heffernan", "Leegwater", "Standing", "Ulldemolins")
+
+# Initialize an empty list to store dataframes for each model
+bland_altman_data <- list()
+
+for (model_name in model_columns) {
+  predicted <- DFPatient[[model_name]]
+  mean_values <- (observed + predicted) / 2
+  differences <- observed - predicted  # For absolute differences
+  perc_differences <- 100 * differences / observed  # For percentage differences
+  
+  # Create a dataframe for this model
+  df <- data.frame(
+    mean_values = mean_values,
+    differences = differences,
+    perc_differences = perc_differences,
+    Model = model_name
+  )
+  
+  bland_altman_data[[model_name]] <- df
+}
+
+# Combine all dataframes into one
+bland_altman_df <- bind_rows(bland_altman_data)
+
+# Calculate the range for differences
+differences_min <- floor(min(bland_altman_df$differences, na.rm = TRUE) / 25) * 25
+differences_max <- ceiling(max(bland_altman_df$differences, na.rm = TRUE) / 25) * 25
+
+# Calculate the range for percentage differences
+perc_differences_min <- floor(min(bland_altman_df$perc_differences, na.rm = TRUE) / 100) * 100
+perc_differences_max <- ceiling(max(bland_altman_df$perc_differences, na.rm = TRUE) / 100) * 100
+
+# Compute statistics for absolute differences
+stats_absolute <- bland_altman_df %>%
+  group_by(Model) %>%
+  summarise(
+    mean_diff = mean(differences, na.rm = TRUE),
+    sd_diff = sd(differences, na.rm = TRUE),
+    loa_upper = mean_diff + 1.96 * sd_diff,
+    loa_lower = mean_diff - 1.96 * sd_diff
+  )
+
+# Compute statistics for percentage differences
+stats_percentage <- bland_altman_df %>%
+  group_by(Model) %>%
+  summarise(
+    mean_diff = mean(perc_differences, na.rm = TRUE),
+    sd_diff = sd(perc_differences, na.rm = TRUE),
+    loa_upper = mean_diff + 1.96 * sd_diff,
+    loa_lower = mean_diff - 1.96 * sd_diff
+  )
+# Create the Bland-Altman plot for absolute differences
+p1 <- ggplot(bland_altman_df, aes(x = mean_values, y = differences, color = Model)) +
+  geom_point(alpha = 0.6) +
+  geom_hline(data = stats_absolute, aes(yintercept = mean_diff), color = "red", linetype = "dashed", size = 1) +
+  geom_hline(data = stats_absolute, aes(yintercept = loa_upper), color = "darkgreen", linetype = "dashed", size = 0.8) +
+  geom_hline(data = stats_absolute, aes(yintercept = loa_lower), color = "darkgreen", linetype = "dashed", size = 0.8) +
+  facet_wrap(~ Model, ncol = 9, scales = "free_y") +  # Set scales to free_y
+  labs(
+    title = "Bland-Altman Plot - Signed Differences",
+    x = "Mean of Observed and Predicted",
+    y = "Error (Observed - Predicted) (mg/L)"
+  ) +
+  custom_theme +
+  scale_color_jco() +  
+  theme(legend.position = "none")
+  # Remove or comment out the scale_y_continuous() function
+
+# Create the Bland-Altman plot for percentage differences
+p2 <- ggplot(bland_altman_df, aes(x = mean_values, y = perc_differences, color = Model)) +
+  geom_point(alpha = 0.6) +
+  geom_hline(data = stats_percentage, aes(yintercept = mean_diff), color = "red", linetype = "dashed", size = 1) +
+  geom_hline(data = stats_percentage, aes(yintercept = loa_upper), color = "darkgreen", linetype = "dashed", size = 0.8) +
+  geom_hline(data = stats_percentage, aes(yintercept = loa_lower), color = "darkgreen", linetype = "dashed", size = 0.8) +
+  facet_wrap(~ Model, ncol = 9, scales = "free_y") +  # Set scales to free_y
+  labs(
+    title = "Bland-Altman Plots - Relative Differences",
+    x = "Mean of Observed and Predicted",
+    y = "Percentage Error (%)"
+  ) +
+  custom_theme +
+  scale_color_jco() +  
+  theme(legend.position = "none")
+
+spacer <- ggplot() + 
+  theme_void() + 
+  theme(plot.margin = unit(rep(0, 4), "cm"))
+
+
+png(file = "Fig S1 - BA_plots.png", width = 27, height = 9, units = 'in', res = 600)
+ggarrange(
+  p1, spacer, p2, 
+  ncol = 1, nrow = 3, 
+  heights = c(1, 0.1, 1)  # Adjust the middle value to control spacer height
+)
+dev.off()
+
+
+
+####################### Evaluation of CEFu prediction on a retrospective cohort of patient treated by ceftriaxone ####################### 
+
+DFCEF<-read.csv2("Studied Population.csv")
+char_cols <- sapply(DFCEF, is.character)
+DFCEF[char_cols] <- lapply(DFCEF[char_cols], factor)
+DFCEF$ID<-as.factor(DFCEF$ID)
+
+
+DFCEF$Department <- fct_lump(DFCEF$Department, n = 8, other_level = "Other")
+DFCEF$Infection <- fct_lump(DFCEF$Infection, n = 6, other_level = "Other")
+DFCEF$Bacteria <- fct_lump(DFCEF$Bacteria, n = 5, other_level = "Other")
+DFCEF$Dosing_Regimen <- fct_lump(DFCEF$Dosing_Regimen, n = 4, other_level = "Other")
+
+
+
+
+
+DFCEF <- DFCEF %>%
+  mutate(Diabetes = factor(ifelse(Diabetes == 0, "No", "Yes"), levels = c("No", "Yes")),
+         Hypertension = factor(ifelse(Hypertension == 0, "No", "Yes"), levels = c("No", "Yes")),
+         Kidney_Disease = factor(ifelse(Kidney_Disease == 0, "No", "Yes"), levels = c("No", "Yes")),
+         Liver_Disease = factor(ifelse(Liver_Disease == 0, "No", "Yes"), levels = c("No", "Yes")),
+         ACFA = factor(ifelse(ACFA == 0, "No", "Yes"), levels = c("No", "Yes")),
+         HCT = factor(ifelse(HCT == 0, "No", "Yes"), levels = c("No", "Yes")),
+         PM = factor(ifelse(PM == 0, "No", "Yes"), levels = c("No", "Yes")),
+         Heart_Failure = factor(ifelse(Heart_Failure == 0, "No", "Yes"), levels = c("No", "Yes")),
+         Betalactams = factor(ifelse(Betalactams == 0, "No", "Yes"), levels = c("No", "Yes")),
+         Aminosides = factor(ifelse(Aminosides == 0, "No", "Yes"), levels = c("No", "Yes")),
+         GGT= as.numeric(GGT),
+         Length_of_Stay = as.numeric(Length_of_Stay),
+         Height = as.numeric(Height),
+         BMI = as.numeric(BMI),
+         Age = as.numeric(Age))
+
+
+DFCEF_selected_patients <- DFCEF[,c(1:3,5,9:22,32)]
+
+DFCEF_patient <- DFCEF_selected_patients %>%
+  distinct(ID, .keep_all = TRUE)
+
+summary_table <- DFCEF_patient %>%
+  dplyr::select(-ID) %>%  # Remove the 'ID' variable
+  tbl_summary(
+    statistic = list(
+      all_continuous() ~ "{median} [{p25} - {p75}]",  # Median and IQR for continuous
+      all_categorical() ~ "{n} / {N} ({p}%)"         # Count and percentage for categorical
+    ),
+    missing = "no"  # Options: "no", "ifany", "always"
+  ) %>%
+  modify_footnote(
+    all_stat_cols() ~ "Median [IQR] or n/N (%)"
+  ) %>%
+  bold_labels() %>%
+as_flex_table() %>%
+flextable::save_as_docx(path="Patients characteristics.docx")
+
+
+
+
+DFCEF_selected_samples <- DFCEF[,c(4,33:44,23:25,31)]
+summary_table <- DFCEF_selected_samples %>%
+  tbl_summary(
+    statistic = list(
+      all_continuous() ~ "{median} [{p25} - {p75}]",  # Median and IQR for continuous
+      all_categorical() ~ "{n} / {N} ({p}%)"         # Count and percentage for categorical
+    ),
+    missing = "no"  # Options: "no", "ifany", "always"
+  ) %>%
+  modify_footnote(
+    all_stat_cols() ~ "Median [IQR] or n/N (%)"
+  ) %>%
+  bold_labels() %>%
+as_flex_table() %>%
+flextable::save_as_docx(path="Samples characteristics.docx")
+
+
+### BOS ###
+BosHill=1.3
+BosBmax = 0.12*(((DFCEF$Albumin/66.5)/0.42)^BosHill)	
+BosKm = 0.0092		
+DFCEF$Bos <-(0.5*(sqrt((DFCEF$CEFt/554.58)^2-(BosBmax-BosKm)*2*(DFCEF$CEFt/554.58)+(BosBmax+BosKm)^2)+(DFCEF$CEFt/554.58)-(BosBmax+BosKm)))*554.58
+
+### DREESEN ###
+DreesenBmax = 0.771*(DFCEF$Albumin/66.5)		
+DreesenKm = 0.053				
+DFCEF$Dreesen <- 0.5*(((DFCEF$CEFt/554.58)-DreesenBmax-DreesenKm)+sqrt(((DFCEF$CEFt/554.58)-DreesenBmax-DreesenKm)^2+4*DreesenKm*(DFCEF$CEFt/554.58)))*554.58 
+
+### GIJSEN###
+GijsenHill=0.26					
+GijsenBmax = -0.64*(((DFCEF$Albumin/66.5)/0.44)^GijsenHill)
+GijsenKm = 1.09				
+DFCEF$Gijsen <- (GijsenBmax*(DFCEF$CEFt/554.58)+(DFCEF$CEFt/554.58)^GijsenKm)*554.58
+
+### GREGOIRE ###
+DFCEF$Gregoire <- (1-(-5*10^-9*(DFCEF$CEFt^3)+6*10^-7*(DFCEF$CEFt^2)-0.0004*DFCEF$CEFt+0.9393))*DFCEF$CEFt
+
+### Hartman ###
+HartmanHill= 1
+HartmanBmax = 223*((DFCEF$Albumin/27)^HartmanHill)
+HartmanKd = 30.3	
+DFCEF$Hartman <- 0.5*((DFCEF$CEFt-HartmanBmax-HartmanKd)+sqrt((DFCEF$CEFt-HartmanBmax-HartmanKd)^2+4*HartmanKd*DFCEF$CEFt))
+
+### HEFFERNAN ###
+HeffernanBmax = DFCEF$Albumin*0.82*(554.6/66500)*1000
+HeffernanKd = 18537.17/1290.19	
+DFCEF$Heffernan <- 0.5*((DFCEF$CEFt-HeffernanBmax-HeffernanKd)+sqrt((DFCEF$CEFt-HeffernanBmax-HeffernanKd)^2+4*HeffernanKd*DFCEF$CEFt))
+
+
+### LEEGWATER ###
+LeegwaterBMAX = 113
+LeegwaterAlbuminBMAX = 1+(0.04*(DFCEF$Albumin-29))
+LeegwaterBmax = LeegwaterBMAX*LeegwaterAlbuminBMAX
+LeegwaterKd = 11.5
+DFCEF$Leegwater <- 0.5*((DFCEF$CEFt-LeegwaterBmax-LeegwaterKd)+sqrt((DFCEF$CEFt-LeegwaterBmax-LeegwaterKd)^2+4*LeegwaterKd*DFCEF$CEFt))
+
+
+### STANDING ###
+StandingHill=0.555443
+StandingBmax = 22.89*((DFCEF$Albumin/33.75)^StandingHill)
+StandingKd = 0.56
+DFCEF$Standing <- 0.5*((DFCEF$CEFt-StandingBmax-StandingKd)+sqrt((DFCEF$CEFt-StandingBmax-StandingKd)^2+4*StandingKd*DFCEF$CEFt))
+
+
+### ULLDEMOLINS ###
+DFCEF$Ulldemolins <- (1*exp(-0.82*(DFCEF$Albumin/24.2)))*DFCEF$CEFt
+
+
+
+
+columns_to_modify <- colnames(DFCEF)[45:53]
+for (col in columns_to_modify) {
+  new_col_name <- paste0(col, "_CMI4")
+  DFCEF <- DFCEF %>%
+    mutate(!!new_col_name := factor(ifelse(!!as.name(col) > 4, "Yes", "No"),
+                                     levels = c("Yes", "No")))
+}
+
+
+for (col in columns_to_modify) {
+  new_col_name <- paste0(col, "_CMI1")
+  DFCEF <- DFCEF %>%
+    mutate(!!new_col_name := factor(ifelse(!!as.name(col) > 1, "Yes", "No"),
+                                     levels = c("Yes", "No")))
+}
+
+
+df_cleaned <- DFCEF %>%
+  filter(!is.na(Bos_CMI1), !is.na(Bos_CMI4))
+
+# Count "Yes" values for Bos_CMI1 and Bos_CMI4
+counts <- DFCEF %>%
+  summarise(Bos_CMI1_Yes = sum(Bos_CMI1 == "Yes",na.rm=TRUE),
+            Bos_CMI4_Yes = sum(Bos_CMI4 == "Yes",na.rm=TRUE),
+	    Dreesen_CMI1_Yes = sum(Dreesen_CMI1 == "Yes",na.rm=TRUE),
+            Dreesen_CMI4_Yes = sum(Dreesen_CMI4 == "Yes",na.rm=TRUE),
+	    Gijsen_CMI1_Yes = sum(Gijsen_CMI1 == "Yes",na.rm=TRUE),
+            Gijsen_CMI4_Yes = sum(Gijsen_CMI4 == "Yes",na.rm=TRUE),
+	    Gregoire_CMI1_Yes = sum(Gregoire_CMI1 == "Yes",na.rm=TRUE),
+            Gregoire_CMI4_Yes = sum(Gregoire_CMI4 == "Yes",na.rm=TRUE),
+	    Hartman_CMI1_Yes = sum(Hartman_CMI1 == "Yes",na.rm=TRUE),
+            Hartman_CMI4_Yes = sum(Hartman_CMI4 == "Yes",na.rm=TRUE),
+	    Heffernan_CMI1_Yes = sum(Heffernan_CMI1 == "Yes",na.rm=TRUE),
+            Heffernan_CMI4_Yes = sum(Heffernan_CMI4 == "Yes",na.rm=TRUE),
+	    Leegwater_CMI1_Yes = sum(Leegwater_CMI1 == "Yes",na.rm=TRUE),
+            Leegwater_CMI4_Yes = sum(Leegwater_CMI4 == "Yes",na.rm=TRUE),
+	    Standing_CMI1_Yes = sum(Standing_CMI1 == "Yes",na.rm=TRUE),
+            Standing_CMI4_Yes = sum(Standing_CMI4 == "Yes",na.rm=TRUE),
+	    Ulldemolins_CMI1_Yes = sum(Ulldemolins_CMI1 == "Yes",na.rm=TRUE),
+            Ulldemolins_CMI4_Yes = sum(Ulldemolins_CMI4 == "Yes",na.rm=TRUE))
+
+
+
+
+FactorModel<-rep(c("Bos","Dreesen","Gijsen","Gregoire","Hartman","Heffernan","Leegwater","Standing","Ulldemolins"), each=2)
+CMIFac<-rep(c("1 x MIC", "4 x MIC"),9) 
+countsModel<-as.data.frame(cbind(t(counts),FactorModel,CMIFac))
+colnames(countsModel) <-c("Counts", "Model","MIC")
+countsModel$Counts <- as.numeric(countsModel$Counts)
+countsModel$Model <- as.factor(countsModel$Model)
+countsModel$MIC <- as.factor(countsModel$MIC)
+
+countsModel$noNA <- rep(colSums(!is.na(DFCEF[,c(45:53)])),each=2)
+
+countsModel$Frequency <- (countsModel$Counts / countsModel$noNA)*100
+
+
+
+p5<-ggplot(data = countsModel, aes(x = MIC, y = Frequency, fill = Model)) + 
+  geom_bar(stat = "identity", position = "dodge", colour = "black") + 
+scale_fill_jco() +
+  labs(x = "\n fT > MIC 100% ", y = "Frequency of Target Attainment (%) \n", 
+       title = "\n",
+       fill = "Target attainment")+
+theme(
+plot.title = element_text(size=18,face="bold"),
+axis.title.x = element_text(size=25, face="bold"),
+axis.title.y = element_text(size=25, face="bold"))+
+theme(panel.grid.minor = element_line(colour="gray90")) +
+theme(panel.grid.major = element_line(colour="gray80")) +
+theme(panel.background = element_blank()) +
+theme(axis.line = element_line(colour = "black",size=2))+
+theme(axis.text=element_text(colour="black",size=25,face="bold"))+
+theme(plot.title=element_text(hjust=0.5))+
+theme(legend.title = element_text(size=25),legend.text = element_text(size=25))+
+geom_text(aes(label = sprintf("%.1f", Frequency)), position = position_dodge(width = 0.9), vjust = -0.5, size = 5)
+
+CMI1<-DFCEF[,c(63:71)]
+CMI1 <- CMI1[complete.cases(CMI1), ] 
+longCMI1<-melt(t(CMI1))
+longCMI1$Var1 <- rep(c("Bos","Standing","Gregoire","Leegwater","Gijsen","Hartman","Ulldemolins","Dreesen","Heffernan"), 376)
+colnames(longCMI1)<-c("Model","ID","TA")
+longCMI1$TA_numeric <- ifelse(longCMI1$TA == "Yes", 1, 0)
+longCMI1$Model <-as.factor(longCMI1$Model)
+
+num_rows<-nrow(CMI1)
+num_columns<-ncol(CMI1)
+# Function to calculate accuracy
+calculate_accuracy <- function(column1, column2) {
+  total_cases <- length(column1)
+  correct_predictions <- sum(column1 == column2)
+  accuracy <- correct_predictions / total_cases
+  return(accuracy)
+}
+
+# Initialize an empty accuracy matrix
+accuracy_matrix <- matrix(0, nrow = num_columns, ncol = num_columns)
+
+# Compute accuracy for each pair of columns
+for (i in 1:num_columns) {
+  for (j in 1:num_columns) {
+    accuracy_matrix[i, j] <- calculate_accuracy(CMI1[, i], CMI1[, j])
+  }
+}
+
+
+colnames(CMI1) <- gsub("_CMI1", "", colnames(CMI1))
+rownames(accuracy_matrix) <- colnames(accuracy_matrix) <- colnames(CMI1)
+
+mean_value <- mean(accuracy_matrix, na.rm = TRUE)
+color_palette <- brewer.pal(11, "RdBu") # Using brewer.pal for red color palette
+color_palette <- color_palette[4:9]
+
+# Define the limits and midpoint for the color scale
+scale_limits <- c(0.65, 1)
+midpoint_value <- (scale_limits[1] + scale_limits[2]) / 2
+
+# Create the correlation matrix plot with the customized color scale
+p6<-ggcorrplot(accuracy_matrix,tl.srt=90,tl.cex=16,
+           hc.order = TRUE,
+           lab = TRUE,
+           colors = color_palette
+) +
+  scale_fill_gradient2(
+    limits = scale_limits,
+    low = color_palette[length(color_palette)],
+    mid = "white",
+    high = color_palette[1],
+    midpoint = midpoint_value,
+    name = "Correlation"
+  )
+
+
+CMI4<-DFCEF[,c(54:62)]
+CMI4 <- CMI4[complete.cases(CMI4), ] 
+longCMI4<-melt(t(CMI4))
+longCMI4$Var1 <- rep(c("Bos","Standing","Gregoire","Leegwater","Gijsen","Hartman","Ulldemolins","Dreesen","Heffernan"), 376)
+colnames(longCMI4)<-c("Model","ID","TA")
+longCMI4$TA_numeric <- ifelse(longCMI4$TA == "Yes", 1, 0)
+longCMI4$Model <-as.factor(longCMI4$Model)
+
+
+
+num_rows<-nrow(CMI4)
+num_columns<-ncol(CMI4)
+# Function to calculate accuracy
+calculate_accuracy <- function(column1, column2) {
+  total_cases <- length(column1)
+  correct_predictions <- sum(column1 == column2)
+  accuracy <- correct_predictions / total_cases
+  return(accuracy)
+}
+
+# Initialize an empty accuracy matrix
+accuracy_matrix <- matrix(0, nrow = num_columns, ncol = num_columns)
+
+# Compute accuracy for each pair of columns
+for (i in 1:num_columns) {
+  for (j in 1:num_columns) {
+    accuracy_matrix[i, j] <- calculate_accuracy(CMI4[, i], CMI4[, j])
+  }
+}
+
+
+colnames(CMI4) <- gsub("_CMI4", "", colnames(CMI4))
+rownames(accuracy_matrix) <- colnames(accuracy_matrix) <- colnames(CMI4)
+
+mean_value <- mean(accuracy_matrix, na.rm = TRUE)
+color_palette <- brewer.pal(11, "RdBu") # Using brewer.pal for red color palette
+color_palette <- color_palette[4:9]
+
+# Define the limits and midpoint for the color scale
+scale_limits <- c(0.65, 1)
+midpoint_value <- (scale_limits[1] + scale_limits[2]) / 2
+
+# Create the correlation matrix plot with the customized color scale
+p7<-ggcorrplot(accuracy_matrix,tl.srt=90,tl.cex=16,
+           hc.order = TRUE,
+           lab = TRUE,
+           colors = color_palette
+) +
+  scale_fill_gradient2(
+    limits = scale_limits,
+    low = color_palette[length(color_palette)],
+    mid = "white",
+    high = color_palette[1],
+    midpoint = midpoint_value,
+    name = "Correlation"
+  )
+
+
+
+
+
+
+
+p8 <- ggarrange(p6,p7,labels=c("B","C"))
+arranged_plots <-ggarrange(p5,p8,nrow=2,labels="AUTO")
+
+png(file = "Fig3.png", width = 18, height = 18, units = 'in',res=600)
+arranged_plots
+dev.off()
+
+CMI1Freq<-countsModel[c(seq(from=1, to=18, by=2)),]
+CMI4Freq<-countsModel[c(seq(from=2, to=18, by=2)),]
+
+DFCEF <- DFCEF %>%
+  mutate(Age = na_if(Age, 0))
+CEFtPred<-DFCEF[,c(1:4,9,12,13,28,29,33,34,35,44)]
+predictor_cols <- setdiff(names(CEFtPred), c("ID", "CEFt"))
+results <- vector("list", length(predictor_cols))
+names(results) <- predictor_cols
+
+# Loop Over Each Predictor and Fit the Model
+for (i in seq_along(predictor_cols)) {
+  predictor <- predictor_cols[i]
+  
+  # Create the Formula
+  formula <- as.formula(paste("CEFt ~", predictor, "+ (1 | ID)"))
+  
+  # Use tryCatch to Handle Potential Errors
+  results[[i]] <- tryCatch({
+    # Fit the Linear Mixed-Effects Model
+    model <- lmer(formula, data = CEFtPred)
+    
+    # Get the Summary of the Model (Includes p-values)
+    test_result <- summary(model)
+    
+    # Store the Predictor and Test Result
+    list(predictor = predictor, test_result = test_result)
+    
+  }, error = function(e){
+    # In Case of Error, Store the Predictor and Error Message
+    list(predictor = predictor, error = e$message)
+  })
+}
+
+# Step 5: Initialize the Result Table
+# Initialize an empty data frame with the desired columns
+result_table <- data.frame(
+  predictor = character(),
+  estimate = numeric(),
+  std_error = numeric(),
+  t_value = numeric(),
+  p_value = numeric(),
+  stringsAsFactors = FALSE
+)
+
+# Step 6: Extract and Store Coefficients
+# Loop over each result to extract coefficients
+for (i in seq_along(results)) {
+  # Extract predictor name and test_result
+  predictor_name <- results[[i]]$predictor
+  
+  # Initialize variables with NA
+  estimate <- NA
+  std_error <- NA
+  t_value <- NA
+  p_value <- NA
+  
+  # Check if there was an error in model fitting
+  if (!is.null(results[[i]]$error)) {
+    cat("Predictor:", predictor_name, "\n")
+    cat("Error:", results[[i]]$error, "\n\n")
+  } else {
+    # Extract the test_result
+    test_result <- results[[i]]$test_result
+    
+    # Check if there are at least two rows in coefficients (Intercept and Predictor)
+    if (nrow(test_result$coefficients) >= 2) {
+      # Extract predictor coefficient details
+      estimate <- test_result$coefficients[2, "Estimate"]
+      std_error <- test_result$coefficients[2, "Std. Error"]
+      t_value <- test_result$coefficients[2, "t value"]
+      p_value <- test_result$coefficients[2, "Pr(>|t|)"]
+    } else {
+      # If predictor coefficient is missing, you can log a message or leave NAs
+      cat("Predictor:", predictor_name, "has no coefficient estimates.\n\n")
+    }
+    
+    # Print the test_result
+    print(test_result)
+    cat("\n")
+  }
+  
+  # Add the extracted values to the result_table
+  result_table <- rbind(
+    result_table,
+    data.frame(
+      predictor = predictor_name,
+      estimate = estimate,
+      std_error = std_error,
+      t_value = t_value,
+      p_value = p_value,
+      stringsAsFactors = FALSE
+    )
+  )
+}
+
+# Step 7: View the Result Table
+print(result_table)
+
+cor(DFCEF$Intake_Dose,DFCEF$Daily_Dose,"pairwise.complete.obs")
+
+
+result_table <- data.frame(predictor = character(0), 
+                            estimate = numeric(0),
+                            std_error = numeric(0),
+                            t_value = numeric(0),
+                            p_value = numeric(0))
+
+for (i in seq_along(results)) {
+  predictor_name <- results[[i]]$predictor
+  test_result <- results[[i]]$test_result
+
+  # Extracting relevant values from the test result
+  estimate <- test_result$coefficients[2, "Estimate"]
+  std_error <- test_result$coefficients[2, "Std. Error"]
+  t_value <- test_result$coefficients[2, "t value"]
+  p_value <- test_result$coefficients[2, "Pr(>|t|)"]
+
+  # Add the extracted values to the result_table
+  result_table <- rbind(result_table, 
+                         data.frame(predictor = predictor_name,
+                                    estimate = estimate,
+                                    std_error = std_error,
+                                    t_value = t_value,
+                                    p_value = p_value))
+}
+
+# Print the result_table
+print(result_table)
+gt_tbl <- gt(result_table)
+
+gt_tbl |> gtsave("CEFt.docx")
+
+CEFtPred_clean <- CEFtPred %>%
+  drop_na()
+
+significant_predictors <- result_table$p_value < 0.05
+selected_predictors <- result_table$predictor[significant_predictors]
+multi_formula <- paste("CEFt ~", paste(selected_predictors, collapse = " + "), "+ (1 | ID)")
+multi_model <- lmer(multi_formula, data = CEFtPred)
+
+summary_full <- summary(multi_model)
+coefficients_table <- data.frame(
+  Predictor = rownames(summary_full$coefficients),
+  Estimate = summary_full$coefficients[, "Estimate"],
+  Std_Error = summary_full$coefficients[, "Std. Error"],
+  T_Value = summary_full$coefficients[, "t value"],
+  P_Value = summary_full$coefficients[, "Pr(>|t|)"]
+)
+
+print(coefficients_table)
+gt_tbl <- gt(coefficients_table)
+
+gt_tbl |> gtsave("CEFtFull.docx")
+
+
+
+CEFtPred_clean <- CEFtPred %>%
+  drop_na()
+
+multi_model <- lmer(multi_formula, data = CEFtPred_clean)
+
+
+
+final_model<-lmerTest::step(multi_model,data=CEFtPred_clean)
+get_final_model<-get_model(final_model)
+
+
+
+selected_predictors <- c("Age","Daily_Dose","Albumin","Creatinin")
+multi_formula <- paste("CEFt ~", paste(selected_predictors, collapse = " + "), "+ (1 | ID)")
+multi_model <- lmer(multi_formula, data = CEFtPred)
+
+summary_final <- summary(multi_model)
+coefficients_table <- data.frame(
+  Predictor = rownames(summary_final$coefficients),
+  Estimate = summary_final$coefficients[, "Estimate"],
+  Std_Error = summary_final$coefficients[, "Std. Error"],
+  T_Value = summary_final$coefficients[, "t value"],
+  P_Value = summary_final$coefficients[, "Pr(>|t|)"]
+)
+
+print(coefficients_table)
+gt_tbl <- gt(coefficients_table)
+
+gt_tbl |> gtsave("CEFtFinal.docx")
+
+
+
+
+ANOVA_DF<- DFCEF[,c(4,31)]
+keeped_dosing <- c("1g x 1 /day", "1g x 2 /day", "2g x 1 /day", "2g x 2 /day")
+ANOVA_subset <- subset(ANOVA_DF, Dosing_Regimen %in% keeped_dosing)
+modaov<-aov(CEFt~Dosing_Regimen,data=ANOVA_subset)
+posthoc <- glht(modaov, linfct = mcp(Dosing_Regimen = "Tukey"))
+
+figaov <- ggplot(ANOVA_subset, aes(x = Dosing_Regimen, y = CEFt))+
+geom_boxplot(
+  aes(fill = Dosing_Regimen), alpha = 0.5,outlier.shape=NA) +xlab("")+ylab("Total Ceftriaxone concentration (mg/L)")+
+scale_fill_jco()+ # Boxplot fill color
+scale_color_jco()+ labs(fill="Dosing Regimen")+
+geom_jitter(aes(color=Dosing_Regimen), width=0.3,show.legend = FALSE)+
+theme(
+axis.title.x = element_text(size=18, face="bold"),
+axis.title.y = element_text(size=18, face="bold"))+
+theme(panel.grid.minor = element_line(colour="gray90")) +
+theme(panel.grid.major = element_line(colour="gray80")) +
+theme(panel.background = element_blank()) +
+theme(axis.line = element_line(colour = "black",size=2))+
+theme(axis.text=element_text(size=18,face="bold"))+  
+theme(legend.title = element_text(size = 24),legend.text = element_text(size = 24))+
+geom_segment(aes(x = 1, y = 225, xend = 2, yend = 225),size=2)+
+geom_segment(aes(x = 1, y = 400, xend = 4, yend = 400),size=2)+
+geom_segment(aes(x = 2, y = 250, xend = 3, yend = 250),size=2)+
+geom_segment(aes(x = 2, y = 425, xend = 4, yend = 425),size=2)+
+geom_segment(aes(x = 3, y = 450, xend = 4, yend = 450),size=2)+
+annotate(geom="text",label="***",x=1.5,y=230,size=8,fontface=2)+
+annotate(geom="text",label="***",x=2.5,y=405,size=8,fontface=2)+
+annotate(geom="text",label="*",x=2.5,y=255,size=8,fontface=2)+
+annotate(geom="text",label="***",x=3,y=430,size=8,fontface=2)+
+annotate(geom="text",label="***",x=3.5,y=455,size=8,fontface=2)
+
+png(file = "FigAOV.png", width = 12, height = 9, units = 'in',res=600)
+figaov
+dev.off()
+
+result <- ANOVA_subset %>%
+  group_by(Dosing_Regimen) %>%
+  summarize(Mean_CEFt = mean(CEFt), SD_CEFt = sd(CEFt))
+
+
+DFCEFFil<-DFCEF
+
+dataframes_list <- DFCEF %>%
+  group_split(Dosing_Regimen)
+
+DFCEFFil1 <- as.data.frame(dataframes_list[[1]])
+DFCEFFil2 <- as.data.frame(dataframes_list[[2]])
+DFCEFFil3 <- as.data.frame(dataframes_list[[3]])
+DFCEFFil4 <- as.data.frame(dataframes_list[[4]])
+
+MIC_values <- c(0.125, 0.25, 0.5, 1, 2, 4, 8, 16, 32)
+calculate_percentage_above_mic <- function(column) {
+  above_mic <- sapply(MIC_values, function(mic) sum(!is.na(column) & column >= mic))
+  return ((above_mic / sum(!is.na(column))) * 100)
+}
+percentage_above_mic_result <- apply(DFCEFFil1[,c(45:53)], 2, calculate_percentage_above_mic)
+PTA1gx1<-percentage_above_mic_result
+PTADF<-data.frame(MIC_values,percentage_above_mic_result)
+long_data <- data.frame(rep(MIC_values,9),melt(percentage_above_mic_result))
+colnames(long_data)<-c("MIC_values","Level","Model","PTA")
+long_data$MIC_values<-as.factor(long_data$MIC_values)
+
+PTA1x1<-ggplot(long_data, aes(x = MIC_values, y = PTA,color=Model)) +
+  geom_point(size=3) + 
+  geom_hline(yintercept = 90, linetype = "dashed", color = "black",size=1.5) +
+  geom_line(aes(group = Model),size=1.5) +
+  scale_color_jco() + ylim(0,100) +
+  scale_y_continuous(breaks = seq(0, 100, by = 10)) +
+  xlab("MIC (mg/L)") + 
+  ylab("PTA (%)") +
+  ggtitle("1g x 1 /day") +
+theme(
+plot.title = element_text(size=18,face="bold"),
+axis.title.x = element_text(size=18, face="bold"),
+axis.title.y = element_text(size=18, face="bold"))+
+theme(panel.grid.minor = element_line(colour="gray90")) +
+theme(panel.grid.major = element_line(colour="gray80")) +
+theme(panel.background = element_blank()) +
+theme(axis.line = element_line(colour = "black",size=2))+
+theme(axis.text=element_text(size=18,face="bold"))+
+theme(plot.title=element_text(hjust=0.5))+
+theme(legend.title = element_text(size=20),legend.text = element_text(size=20))
+
+
+
+
+
+
+percentage_above_mic_result <- apply(DFCEFFil2[,c(45:53)], 2, calculate_percentage_above_mic)
+PTADF<-data.frame(MIC_values,percentage_above_mic_result)
+long_data <- data.frame(rep(MIC_values,9),melt(percentage_above_mic_result))
+colnames(long_data)<-c("MIC_values","Level","Model","PTA")
+long_data$MIC_values<-as.factor(long_data$MIC_values)
+PTA1gx2<-percentage_above_mic_result
+PTA1x2<-ggplot(long_data, aes(x = MIC_values, y = PTA,color=Model)) +
+  geom_point(size=3) + 
+  geom_hline(yintercept = 90, linetype = "dashed", color = "black",size=1.5) +
+  geom_line(aes(group = Model),size=1.5) +
+  scale_color_jco() + ylim(0,100) +
+  scale_y_continuous(breaks = seq(0, 100, by = 10)) +
+  xlab("MIC (mg/L)") + 
+  ylab("PTA (%)") +
+  ggtitle("1g x 2 /day") +
+theme(
+plot.title = element_text(size=18,face="bold"),
+axis.title.x = element_text(size=18, face="bold"),
+axis.title.y = element_text(size=18, face="bold"))+
+theme(panel.grid.minor = element_line(colour="gray90")) +
+theme(panel.grid.major = element_line(colour="gray80")) +
+theme(panel.background = element_blank()) +
+theme(axis.line = element_line(colour = "black",size=2))+
+theme(axis.text=element_text(size=18,face="bold"))+
+theme(plot.title=element_text(hjust=0.5))+
+theme(legend.title = element_text(size=20),legend.text = element_text(size=20))
+
+
+
+apply(DFCEF[,c(45:53)], 2, calculate_percentage_above_mic)
+
+percentage_above_mic_result <- apply(DFCEFFil3[,c(45:53)], 2, calculate_percentage_above_mic)
+PTADF<-data.frame(MIC_values,percentage_above_mic_result)
+long_data <- data.frame(rep(MIC_values,9),melt(percentage_above_mic_result))
+colnames(long_data)<-c("MIC_values","Level","Model","PTA")
+long_data$MIC_values<-as.factor(long_data$MIC_values)
+PTA2gx1<-percentage_above_mic_result
+PTA2x1<-ggplot(long_data, aes(x = MIC_values, y = PTA,color=Model)) +
+  geom_point(size=3) + 
+  geom_hline(yintercept = 90, linetype = "dashed", color = "black",size=1.5) +
+  geom_line(aes(group = Model),size=1.5) +
+  scale_color_jco() +  ylim(0,100) +
+  scale_y_continuous(breaks = seq(0, 100, by = 10)) +
+  xlab("MIC (mg/L)") +
+  ylab("PTA (%)") +
+  ggtitle("2g x 1 /day") +
+theme(
+plot.title = element_text(size=18,face="bold"),
+axis.title.x = element_text(size=18, face="bold"),
+axis.title.y = element_text(size=18, face="bold"))+
+theme(panel.grid.minor = element_line(colour="gray90")) +
+theme(panel.grid.major = element_line(colour="gray80")) +
+theme(panel.background = element_blank()) +
+theme(axis.line = element_line(colour = "black",size=2))+
+theme(axis.text=element_text(size=18,face="bold"))+
+theme(plot.title=element_text(hjust=0.5))+
+theme(legend.title = element_text(size=20),legend.text = element_text(size=20))
+
+
+
+percentage_above_mic_result <- apply(DFCEFFil4[,c(45:53)], 2, calculate_percentage_above_mic)
+
+PTA2gx2<-percentage_above_mic_result
+PTADF<-data.frame(MIC_values,percentage_above_mic_result)
+long_data <- data.frame(rep(MIC_values,9),melt(percentage_above_mic_result))
+colnames(long_data)<-c("MIC_values","Level","Model","PTA")
+long_data$MIC_values<-as.factor(long_data$MIC_values)
+
+PTA2x2<-ggplot(long_data, aes(x = MIC_values, y = PTA,color=Model)) +
+  geom_point(size=3) + 
+  geom_hline(yintercept = 90, linetype = "dashed", color = "black",size=1.5) +
+  geom_line(aes(group = Model),size=1.5) +
+  scale_color_jco() + ylim(0,100) +
+  scale_y_continuous(breaks = seq(0, 100, by = 10)) +
+  xlab("MIC (mg/L)") + 
+  ylab("PTA (%)") +
+  ggtitle("2g x 2 /day") +
+theme(
+plot.title = element_text(size=18,face="bold"),
+axis.title.x = element_text(size=18, face="bold"),
+axis.title.y = element_text(size=18, face="bold"))+
+theme(panel.grid.minor = element_line(colour="gray90")) +
+theme(panel.grid.major = element_line(colour="gray80")) +
+theme(panel.background = element_blank()) +
+theme(axis.line = element_line(colour = "black",size=2))+
+theme(axis.text=element_text(size=18,face="bold"))+
+theme(plot.title=element_text(hjust=0.5))+
+theme(legend.title = element_text(size=20),legend.text = element_text(size=20))
+
+
+leg<-as_ggplot(get_legend(PTA2x2))
+arranged_plots <-ggarrange(PTA1x1,PTA1x2,PTA2x1,PTA2x2,labels="AUTO",legend="none")
+final_plot <- plot_grid(arranged_plots, leg, ncol = 2, rel_widths = c(0.8, 0.2))
+
+
+png(file = "PTA.png", width = 16, height = 12, units = 'in',res=600)
+final_plot
+dev.off()
+
+gt_tbl <- gt(round(as.data.frame(PTA1gx1),1))
+gt_tbl |> gtsave("PTA1gx1.docx")
+
+gt_tbl <- gt(round(as.data.frame(PTA1gx2),1))
+gt_tbl |> gtsave("PTA1gx2.docx")
+
+gt_tbl <- gt(round(as.data.frame(PTA2gx1),1))
+gt_tbl |> gtsave("PTA2gx1.docx")
+
+gt_tbl <- gt(round(as.data.frame(PTA2gx2),1))
+gt_tbl |> gtsave("PTA2gx2.docx")
