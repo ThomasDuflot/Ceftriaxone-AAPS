@@ -274,7 +274,7 @@ sd(result_df2[10:18,2])/mean(result_df2[10:18,2])*100
 
 
 
-
+####################### External Validation ####################### 
 
 
 DFPatient<-read.csv2("Supplementary File S3 - External Validation.csv")
@@ -567,7 +567,7 @@ print(doc, target = "model_metrics_results.docx")
 
 
 
-### BA plots ###
+### OBS vs PRED plots ###
 
 # Define your custom theme
 custom_theme <- theme(
@@ -592,101 +592,134 @@ observed <- DFPatient$CefUnbound
 model_columns <- c("Bos", "Dreesen", "Gijsen", "Gregoire", "Hartman", 
                    "Heffernan", "Leegwater", "Standing", "Ulldemolins")
 
-# Initialize an empty list to store dataframes for each model
-bland_altman_data <- list()
+# Create a combined dataframe for observation vs. prediction
+obs_vs_pred_data <- list()
 
 for (model_name in model_columns) {
   predicted <- DFPatient[[model_name]]
-  mean_values <- (observed + predicted) / 2
-  differences <- observed - predicted  # For absolute differences
-  perc_differences <- 100 * differences / observed  # For percentage differences
   
   # Create a dataframe for this model
   df <- data.frame(
-    mean_values = mean_values,
-    differences = differences,
-    perc_differences = perc_differences,
+    Observed = observed,
+    Predicted = predicted,
     Model = model_name
   )
   
-  bland_altman_data[[model_name]] <- df
+  obs_vs_pred_data[[model_name]] <- df
 }
 
 # Combine all dataframes into one
-bland_altman_df <- bind_rows(bland_altman_data)
+obs_vs_pred_df <- bind_rows(obs_vs_pred_data)
 
-# Calculate the range for differences
-differences_min <- floor(min(bland_altman_df$differences, na.rm = TRUE) / 25) * 25
-differences_max <- ceiling(max(bland_altman_df$differences, na.rm = TRUE) / 25) * 25
-
-# Calculate the range for percentage differences
-perc_differences_min <- floor(min(bland_altman_df$perc_differences, na.rm = TRUE) / 100) * 100
-perc_differences_max <- ceiling(max(bland_altman_df$perc_differences, na.rm = TRUE) / 100) * 100
-
-# Compute statistics for absolute differences
-stats_absolute <- bland_altman_df %>%
+# Calculate statistics (optional)
+stats_obs_pred <- obs_vs_pred_df %>%
   group_by(Model) %>%
   summarise(
-    mean_diff = mean(differences, na.rm = TRUE),
-    sd_diff = sd(differences, na.rm = TRUE),
-    loa_upper = mean_diff + 1.96 * sd_diff,
-    loa_lower = mean_diff - 1.96 * sd_diff
+    r_squared = cor(Observed, Predicted, use = "complete.obs")^2,
+    rmse = sqrt(mean((Observed - Predicted)^2, na.rm = TRUE))
   )
 
-# Compute statistics for percentage differences
-stats_percentage <- bland_altman_df %>%
-  group_by(Model) %>%
-  summarise(
-    mean_diff = mean(perc_differences, na.rm = TRUE),
-    sd_diff = sd(perc_differences, na.rm = TRUE),
-    loa_upper = mean_diff + 1.96 * sd_diff,
-    loa_lower = mean_diff - 1.96 * sd_diff
-  )
-# Create the Bland-Altman plot for absolute differences
-p1 <- ggplot(bland_altman_df, aes(x = mean_values, y = differences, color = Model)) +
+# Create the observation vs. prediction plot
+obs_vs_pred_plot <- ggplot(obs_vs_pred_df, aes(x = Observed, y = Predicted, color = Model)) +
   geom_point(alpha = 0.6) +
-  geom_hline(data = stats_absolute, aes(yintercept = mean_diff), color = "red", linetype = "dashed", size = 1) +
-  geom_hline(data = stats_absolute, aes(yintercept = loa_upper), color = "darkgreen", linetype = "dashed", size = 0.8) +
-  geom_hline(data = stats_absolute, aes(yintercept = loa_lower), color = "darkgreen", linetype = "dashed", size = 0.8) +
-  facet_wrap(~ Model, ncol = 9, scales = "free_y") +  # Set scales to free_y
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed", size = 1) +  # Line of identity
+  facet_wrap(~ Model, ncol = 3,nrow=3, scales = "free") +  # Option to adjust scales
   labs(
-    title = "Bland-Altman Plot - Signed Differences",
-    x = "Mean of Observed and Predicted",
-    y = "Error (Observed - Predicted) (mg/L)"
+    title = "Observation vs Prediction",
+    x = "Observed (mg/L)",
+    y = "Predicted (mg/L)"
   ) +
   custom_theme +
-  scale_color_jco() +  
-  theme(legend.position = "none")
-  # Remove or comment out the scale_y_continuous() function
-
-# Create the Bland-Altman plot for percentage differences
-p2 <- ggplot(bland_altman_df, aes(x = mean_values, y = perc_differences, color = Model)) +
-  geom_point(alpha = 0.6) +
-  geom_hline(data = stats_percentage, aes(yintercept = mean_diff), color = "red", linetype = "dashed", size = 1) +
-  geom_hline(data = stats_percentage, aes(yintercept = loa_upper), color = "darkgreen", linetype = "dashed", size = 0.8) +
-  geom_hline(data = stats_percentage, aes(yintercept = loa_lower), color = "darkgreen", linetype = "dashed", size = 0.8) +
-  facet_wrap(~ Model, ncol = 9, scales = "free_y") +  # Set scales to free_y
-  labs(
-    title = "Bland-Altman Plots - Relative Differences",
-    x = "Mean of Observed and Predicted",
-    y = "Percentage Error (%)"
-  ) +
-  custom_theme +
-  scale_color_jco() +  
+  scale_color_jco() +
   theme(legend.position = "none")
 
-spacer <- ggplot() + 
-  theme_void() + 
-  theme(plot.margin = unit(rep(0, 4), "cm"))
-
-
-png(file = "Fig S1 - BA_plots.png", width = 27, height = 9, units = 'in', res = 600)
-ggarrange(
-  p1, spacer, p2, 
-  ncol = 1, nrow = 3, 
-  heights = c(1, 0.1, 1)  # Adjust the middle value to control spacer height
-)
+# Save the plot
+png(file = "Fig S1 - Obs_vs_Pred.png", width = 12, height = 12, units = 'in', res = 600)
+print(obs_vs_pred_plot)
 dev.off()
+
+
+# Create a combined dataframe for relative observation vs. prediction
+relative_obs_vs_pred_data <- list()
+
+for (model_name in model_columns) {
+  predicted <- DFPatient[[model_name]]
+  
+  # Calculate relative difference as a percentage
+  relative_difference <- 100 * (predicted - observed) / observed
+  
+  # Create a dataframe for this model
+  df <- data.frame(
+    Observed = observed,
+    RelativeDifference = relative_difference,
+    Model = model_name
+  )
+  
+  relative_obs_vs_pred_data[[model_name]] <- df
+}
+
+# Combine all dataframes into one
+relative_obs_vs_pred_df <- bind_rows(relative_obs_vs_pred_data)
+
+# Create the relative observation vs. prediction plot
+relative_obs_vs_pred_plot <- ggplot(relative_obs_vs_pred_df, aes(x = Observed, y = RelativeDifference, color = Model)) +
+  geom_point(alpha = 0.6) +
+  geom_hline(yintercept = 0, color = "red", linetype = "dashed", size = 1) +  # Line at 0% error
+  facet_wrap(~ Model, nrow = 3, ncol = 3, scales = "free") +  # Adjust rows and columns
+  labs(
+    title = "Relative Observation vs Prediction",
+    x = "Observed (mg/L)",
+    y = "Relative Difference (%)"
+  ) +
+  custom_theme +
+  scale_color_jco() +
+  theme(legend.position = "none")
+
+# Save the plot
+png(file = "Fig S1 - Relative_Obs_vs_Pred_2x4.png", width = 12, height = 12, units = 'in', res = 600)
+print(relative_obs_vs_pred_plot)
+dev.off()
+
+
+
+
+### NLS ###
+
+# Scale ALB by its mean
+DFPatient <- DFPatient %>%
+  mutate(ALB_scaled = ALB / mean(ALB, na.rm = TRUE))
+
+# Define the nls formula
+nls_formula <- CefUnbound ~ 0.5 * (
+  (CefT - (Bmax_0 * (ALB_scaled^beta_ALB))) -
+  Kd +
+  sqrt((CefT - (Bmax_0 * (ALB_scaled^beta_ALB)) - Kd)^2 + 4 * Kd * CefT)
+)
+
+# Fit the nls model
+nls_model_alb <- nls(
+  formula = nls_formula,
+  data = DFPatient,
+  start = list(Bmax_0 = 179.6, beta_ALB = 1.3, Kd = 14.8),
+  control = nls.control(maxiter = 100, tol = 1e-6)
+)
+
+# Print model summary
+summary(nls_model_alb)
+
+
+# Add predicted values and residuals to the dataframe
+DFPatient <- DFPatient %>%
+  mutate(
+    Predicted_CefUnbound = predict(nls_model_alb),
+    Residuals = CefUnbound - Predicted_CefUnbound
+  )
+
+
+
+
+
+
 
 
 
