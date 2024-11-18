@@ -1,15 +1,15 @@
-# **Ceftriaxone AAC**
+# **Ceftriaxone AAPS**
 
 ## This repository was created to reproduce all results from [GitHub Pages](https://pages.github.com/). 
 ## It contains raw data as well as R code, ensuring transparency of the results. In this context, the repository includes:
 
-###  - [Unbound Ceftriaxone Calculator.xlsx](https://github.com/ThomasDuflot/Ceftriaxone-AAC/blob/main/Unbound%20Ceftriaxone%20Calculator.xlsx): This excel sheet allows to compute the unbound ceftriaxone from total ceftriaxone and albuminemia
+###  - [Unbound Ceftriaxone Calculator.xlsx](https://github.com/ThomasDuflot/Ceftriaxone-AAPS/blob/main/Unbound%20Ceftriaxone%20Calculator.xlsx): This excel sheet allows to compute the unbound ceftriaxone from total ceftriaxone and albuminemia
   
-###  - [External Validation.csv](https://github.com/ThomasDuflot/Ceftriaxone-AAC/blob/main/External%20Validation.csv): This file corresponds to the prospective study for the external validation. 62 samples from 59 patients were collected allowing determination of total ceftriaxone, albuminemia and unbound ceftriaxone.
+###  - [External Validation.csv](https://github.com/ThomasDuflot/Ceftriaxone-AAPS/blob/main/External%20Validation.csv): This file corresponds to the prospective study for the external validation. 62 samples from 59 patients were collected allowing determination of total ceftriaxone, albuminemia and unbound ceftriaxone.
 
-###  - [Retrospective Studied Population.csv](https://github.com/ThomasDuflot/Ceftriaxone-AAC/blob/main/Retrospective%20Studied%20Population.csv): This file contains clinico-biological data extracted from the clinical data warehouse (408 samples from 222 patients)
+###  - [Retrospective Studied Population.csv](https://github.com/ThomasDuflot/Ceftriaxone-AAPS/blob/main/Retrospective%20Studied%20Population.csv): This file contains clinico-biological data extracted from the clinical data warehouse (408 samples from 222 patients)
     
-###  - [R Code](https://github.com/ThomasDuflot/Ceftriaxone-AAC/blob/main/R%20Code): Used for statistical analyses, plots and tables export.</h4>
+###  - [R Code](https://github.com/ThomasDuflot/Ceftriaxone-AAPS/blob/main/R%20Code): Used for statistical analyses, plots and tables export.</h4>
 
 ### If you use data from this repository, please cite [GitHub Pages](https://pages.github.com/)
 
