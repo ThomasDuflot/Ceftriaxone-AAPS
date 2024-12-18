@@ -11,7 +11,7 @@
     
 ###  - [R Code](https://github.com/ThomasDuflot/Ceftriaxone-AAPS/blob/main/R%20Code): Used for statistical analyses, plots and tables export.</h4>
 
-### If you use data from this repository, please cite [GitHub Pages](https://pages.github.com/)
+### If you use data from this repository, please cite [Link Paper](https://pages.github.com/). 
 
 ## **WARNING!**
 ### All results from this repository have been produced for research purposes only. Although they are based on models built from clinical data, the authors disclaim all responsibility for their use.
