@@ -325,6 +325,25 @@ calc_single_model <- function(model_name, CEFt, alb_val){
 ####     3)  Shiny UI definition         ####
 ####-------------------------------------####
 ui <- fluidPage(
+  # Add custom CSS to increase text size in the sidebar
+  tags$head(tags$style(HTML("
+    /* Increase size of numericInput and checkbox labels */
+    .control-label, .checkbox label {
+      font-size: 18px; /* Larger size for input labels */
+    }
+
+    /* Increase size of wellPanel titles (h4 elements) */
+    h4 {
+      font-size: 20px; /* Larger size for section titles */
+      font-weight: bold; /* Make section titles bold */
+    }
+
+    /* Increase size of numeric input fields */
+    .shiny-input-container {
+      font-size: 16px; /* Larger size for numeric input fields */
+    }
+  "))),
+  
   # Application title
   titlePanel("Ceftriaxone Free Fraction (%) vs. Total Concentration (mg/L)"),
   
@@ -337,25 +356,25 @@ ui <- fluidPage(
       
       # First wellPanel (top row) for "Plot parameters"
       wellPanel(
-        h4("Albuminemia (g/L):"),
+        h4("Albuminemia (g/L):"),  # Section title
         numericInput("albumin", 
-                    "", 
-                    min = 1, max = 100, value = 20, step = 1),
+                     "", 
+                     min = 1, max = 100, value = 20, step = 1),  # Numeric input
         checkboxGroupInput("models", "Select Models:",
-                           choices = c("Bos","Standing","Gregoire","Leegwater",
-                                       "Gijsen","Hartman","Ulldemolins",
-                                       "Dreesen","Heffernan"),
-                           selected = c("Bos","Standing","Gregoire","Leegwater",
-                                       "Gijsen","Hartman","Ulldemolins",
-                                       "Dreesen","Heffernan"))
+                           choices = c("Bos", "Standing", "Gregoire", "Leegwater",
+                                       "Gijsen", "Hartman", "Ulldemolins",
+                                       "Dreesen", "Heffernan"),
+                           selected = c("Bos", "Standing", "Gregoire", "Leegwater",
+                                        "Gijsen", "Hartman", "Ulldemolins",
+                                        "Dreesen", "Heffernan"))  # Checkboxes
       ),
       
       # Second wellPanel (bottom row) for "Table parameters"
       wellPanel(
-        h4("Total Ceftriaxone (mg/L) from TDM "),
+        h4("Total Ceftriaxone (mg/L) from TDM"),  # Section title
         numericInput("ceft_val", 
-                    "",
-                    min = 0.1, max = 300, value = 50, step = 0.1)
+                     "", 
+                     min = 0.1, max = 300, value = 50, step = 0.1)  # Numeric input
       )
     ),
     
@@ -369,6 +388,7 @@ ui <- fluidPage(
     )
   )
 )
+
 
 ####-------------------------------------####
 ####     4)  Shiny SERVER definition     ####
