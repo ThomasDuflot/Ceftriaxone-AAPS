@@ -1,1 +1,446 @@
+library(shiny)
+library(ggplot2)
+library(dplyr)
+library(ggsci)  # for scale_color_jco()
 
+####--------------------------------------------------------####
+####  1)  Model functions for vectors (for line plotting)   ####
+####--------------------------------------------------------####
+
+calc_free_fraction_bos <- function(ceft_vec, alb_val){
+  alb_m   <- alb_val / 66.5
+  bosHill <- 1.3
+  bosBmax <- 0.12 * ((alb_m / 0.42)^bosHill)
+  bosKm   <- 0.0092
+  
+  ceft_m  <- ceft_vec / 554.58
+  bosAlbNb <- 0.5 * ((ceft_m - bosBmax - bosKm) +
+                       sqrt((ceft_m - bosBmax - bosKm)^2 + 4 * bosKm * ceft_m))
+  bosCEFu <- bosAlbNb * 554.58
+  
+  FF <- (bosCEFu / ceft_vec) * 100
+  FF[ceft_vec == 0] <- 0  # avoid div-by-zero
+  data.frame(CEFt = ceft_vec, FreeFraction = FF, Model = "Bos")
+}
+
+calc_free_fraction_standing <- function(ceft_vec, alb_val){
+  standingHill <- 0.56
+  bmax <- 22.89 * ((alb_val / 33.75)^standingHill)
+  kd   <- 0.56
+  
+  cefu <- 0.5 * ((ceft_vec - bmax - kd) +
+                   sqrt((ceft_vec - bmax - kd)^2 + 4 * kd * ceft_vec))
+  
+  FF <- (cefu / ceft_vec) * 100
+  FF[ceft_vec == 0] <- 0
+  data.frame(CEFt = ceft_vec, FreeFraction = FF, Model = "Standing")
+}
+
+calc_free_fraction_gregoire <- function(ceft_vec, alb_val){
+  # Gregoire polynomial for free fraction
+  # Fb = -5e-9 * CEFt^3 + 6e-7 * CEFt^2 - 0.0004 * CEFt + 0.9393
+  # Then unbound = (1 - Fb)*CEFt
+  fb <- -5e-9 * ceft_vec^3 + 6e-7 * ceft_vec^2 - 0.0004 * ceft_vec + 0.9393
+  cefu <- (1 - fb) * ceft_vec
+  
+  FF <- (cefu / ceft_vec) * 100
+  FF[ceft_vec == 0] <- 0
+  data.frame(CEFt = ceft_vec, FreeFraction = FF, Model = "Gregoire")
+}
+
+calc_free_fraction_leegwater <- function(ceft_vec, alb_val){
+  BMAX_const <- 113
+  alb_bmax_factor <- 1 + 0.04 * (alb_val - 29)
+  bmax <- BMAX_const * alb_bmax_factor
+  kd   <- 11.5
+  
+  cefu <- 0.5 * ((ceft_vec - bmax - kd) +
+                   sqrt((ceft_vec - bmax - kd)^2 + 4 * kd * ceft_vec))
+  FF <- (cefu / ceft_vec) * 100
+  FF[ceft_vec == 0] <- 0
+  data.frame(CEFt = ceft_vec, FreeFraction = FF, Model = "Leegwater")
+}
+
+calc_free_fraction_gijsen <- function(ceft_vec, alb_val){
+  alb_m <- alb_val / 66.5
+  gijHill <- 0.26
+  gijBmax <- -0.64 * ((alb_m / 0.44)^gijHill)
+  gijKm   <- 1.09
+  
+  ceft_m   <- ceft_vec / 554.58
+  gijAlbNb <- gijBmax * ceft_m + ceft_m^gijKm
+  gijCEFu  <- gijAlbNb * 554.58
+  
+  FF <- (gijCEFu / ceft_vec) * 100
+  FF[ceft_vec == 0] <- 0
+  data.frame(CEFt = ceft_vec, FreeFraction = FF, Model = "Gijsen")
+}
+
+calc_free_fraction_hartman <- function(ceft_vec, alb_val){
+  bmax <- 223 * (alb_val / 27)^1
+  kd   <- 30.3
+  
+  cefu <- 0.5 * ((ceft_vec - bmax - kd) +
+                   sqrt((ceft_vec - bmax - kd)^2 + 4 * kd * ceft_vec))
+  FF <- (cefu / ceft_vec) * 100
+  FF[ceft_vec == 0] <- 0
+  data.frame(CEFt = ceft_vec, FreeFraction = FF, Model = "Hartman")
+}
+
+calc_free_fraction_ulldemolins <- function(ceft_vec, alb_val){
+  # Fu = exp(-0.82*(Alb/24.2))
+  fu <- exp(-0.82 * (alb_val / 24.2))
+  cefu <- fu * ceft_vec
+  FF <- (cefu / ceft_vec)*100
+  FF[ceft_vec == 0] <- 0
+  data.frame(CEFt = ceft_vec, FreeFraction = FF, Model = "Ulldemolins")
+}
+
+calc_free_fraction_dreesen <- function(ceft_vec, alb_val){
+  alb_m <- alb_val / 66.5
+  dreesenBmax <- 0.771 * alb_m
+  dreesenKm   <- 0.053
+  
+  ceft_m <- ceft_vec / 554.58
+  dreesenAlbNb <- 0.5 * ((ceft_m - dreesenBmax - dreesenKm) +
+                           sqrt((ceft_m - dreesenBmax - dreesenKm)^2 + 4*dreesenKm*ceft_m))
+  cefu <- dreesenAlbNb * 554.58
+  FF <- (cefu / ceft_vec)*100
+  FF[ceft_vec == 0] <- 0
+  data.frame(CEFt = ceft_vec, FreeFraction = FF, Model = "Dreesen")
+}
+
+calc_free_fraction_heffernan <- function(ceft_vec, alb_val){
+  bmax <- alb_val * 0.82 * (554.6 / 66500) * 1000
+  kd   <- 18537.17 / 1290.19
+  
+  cefu <- 0.5 * ((ceft_vec - bmax - kd) +
+                   sqrt((ceft_vec - bmax - kd)^2 + 4 * kd * ceft_vec))
+  FF <- (cefu / ceft_vec)*100
+  FF[ceft_vec == 0] <- 0
+  data.frame(CEFt = ceft_vec, FreeFraction = FF, Model = "Heffernan")
+}
+
+# Helper to get full lines (0-300 mg/L) for a chosen model and albumin:
+get_model_df <- function(model_name, alb_val){
+  ceft_seq <- seq(0.1, 300, 0.1)
+  switch(
+    model_name,
+    "Bos"         = calc_free_fraction_bos(ceft_seq, alb_val),
+    "Standing"    = calc_free_fraction_standing(ceft_seq, alb_val),
+    "Gregoire"    = calc_free_fraction_gregoire(ceft_seq, alb_val),
+    "Leegwater"   = calc_free_fraction_leegwater(ceft_seq, alb_val),
+    "Gijsen"      = calc_free_fraction_gijsen(ceft_seq, alb_val),
+    "Hartman"     = calc_free_fraction_hartman(ceft_seq, alb_val),
+    "Ulldemolins" = calc_free_fraction_ulldemolins(ceft_seq, alb_val),
+    "Dreesen"     = calc_free_fraction_dreesen(ceft_seq, alb_val),
+    "Heffernan"   = calc_free_fraction_heffernan(ceft_seq, alb_val),
+    stop("Unknown model: ", model_name)
+  )
+}
+
+####-----------------------------------------------------------------####
+####  2)  Single-value functions for the TABLE (CEFt & Alb are fixed) ####
+####-----------------------------------------------------------------####
+
+calc_free_fraction_bos_single <- function(CEFt, alb_val){
+  alb_m   <- alb_val / 66.5
+  bosHill <- 1.3
+  bosBmax <- 0.12 * ((alb_m / 0.42)^bosHill)
+  bosKm   <- 0.0092
+  
+  ceft_m  <- CEFt / 554.58
+  bosAlbNb <- 0.5 * ((ceft_m - bosBmax - bosKm) +
+                       sqrt((ceft_m - bosBmax - bosKm)^2 + 4 * bosKm * ceft_m))
+  bosCEFu <- bosAlbNb * 554.58
+  
+  FF <- if(CEFt == 0) 0 else (bosCEFu / CEFt) * 100
+  if(CEFt == 0) bosCEFu <- 0
+  
+  data.frame(
+    Model             = "Bos",
+    `Free fraction %` = FF,
+    `Free conc mg/L`  = bosCEFu
+  )
+}
+
+calc_free_fraction_standing_single <- function(CEFt, alb_val){
+  standingHill <- 0.56
+  bmax <- 22.89 * ((alb_val / 33.75)^standingHill)
+  kd   <- 0.56
+  
+  cefu <- 0.5 * ((CEFt - bmax - kd) +
+                   sqrt((CEFt - bmax - kd)^2 + 4 * kd * CEFt))
+  
+  FF <- if(CEFt == 0) 0 else (cefu / CEFt) * 100
+  if(CEFt == 0) cefu <- 0
+  
+  data.frame(
+    Model             = "Standing",
+    `Free fraction %` = FF,
+    `Free conc mg/L`  = cefu
+  )
+}
+
+calc_free_fraction_gregoire_single <- function(CEFt, alb_val){
+  # Gregoire formula doesn't use Alb
+  fb <- -5e-9 * CEFt^3 + 6e-7 * CEFt^2 - 0.0004 * CEFt + 0.9393
+  cefu <- (1 - fb) * CEFt
+  
+  FF <- if(CEFt == 0) 0 else (cefu / CEFt) * 100
+  if(CEFt == 0) cefu <- 0
+  
+  data.frame(
+    Model             = "Gregoire",
+    `Free fraction %` = FF,
+    `Free conc mg/L`  = cefu
+  )
+}
+
+calc_free_fraction_leegwater_single <- function(CEFt, alb_val){
+  BMAX_const <- 113
+  alb_bmax_factor <- 1 + 0.04 * (alb_val - 29)
+  bmax <- BMAX_const * alb_bmax_factor
+  kd   <- 11.5
+  
+  cefu <- 0.5 * ((CEFt - bmax - kd) +
+                   sqrt((CEFt - bmax - kd)^2 + 4 * kd * CEFt))
+  
+  FF <- if(CEFt == 0) 0 else (cefu / CEFt) * 100
+  if(CEFt == 0) cefu <- 0
+  
+  data.frame(
+    Model             = "Leegwater",
+    `Free fraction %` = FF,
+    `Free conc mg/L`  = cefu
+  )
+}
+
+calc_free_fraction_gijsen_single <- function(CEFt, alb_val){
+  alb_m  <- alb_val / 66.5
+  gijHill <- 0.26
+  gijBmax <- -0.64 * ((alb_m / 0.44)^gijHill)
+  gijKm   <- 1.09
+  
+  ceft_m   <- CEFt / 554.58
+  gijAlbNb <- gijBmax * ceft_m + ceft_m^gijKm
+  gijCEFu  <- gijAlbNb * 554.58
+  
+  FF <- if(CEFt == 0) 0 else (gijCEFu / CEFt) * 100
+  if(CEFt == 0) gijCEFu <- 0
+  
+  data.frame(
+    Model             = "Gijsen",
+    `Free fraction %` = FF,
+    `Free conc mg/L`  = gijCEFu
+  )
+}
+
+calc_free_fraction_hartman_single <- function(CEFt, alb_val){
+  bmax <- 223 * (alb_val / 27)
+  kd   <- 30.3
+  
+  cefu <- 0.5 * ((CEFt - bmax - kd) +
+                   sqrt((CEFt - bmax - kd)^2 + 4 * kd * CEFt))
+  
+  FF <- if(CEFt == 0) 0 else (cefu / CEFt) * 100
+  if(CEFt == 0) cefu <- 0
+  
+  data.frame(
+    Model             = "Hartman",
+    `Free fraction %` = FF,
+    `Free conc mg/L`  = cefu
+  )
+}
+
+calc_free_fraction_ulldemolins_single <- function(CEFt, alb_val){
+  fu <- exp(-0.82 * (alb_val / 24.2))
+  cefu <- fu * CEFt
+  
+  FF <- if(CEFt == 0) 0 else (cefu / CEFt) * 100
+  if(CEFt == 0) cefu <- 0
+  
+  data.frame(
+    Model             = "Ulldemolins",
+    `Free fraction %` = FF,
+    `Free conc mg/L`  = cefu
+  )
+}
+
+calc_free_fraction_dreesen_single <- function(CEFt, alb_val){
+  alb_m <- alb_val / 66.5
+  dreesenBmax <- 0.771 * alb_m
+  dreesenKm   <- 0.053
+  
+  ceft_m <- CEFt / 554.58
+  dreesenAlbNb <- 0.5 * ((ceft_m - dreesenBmax - dreesenKm) +
+                           sqrt((ceft_m - dreesenBmax - dreesenKm)^2 + 4*dreesenKm*ceft_m))
+  cefu <- dreesenAlbNb * 554.58
+  
+  FF <- if(CEFt == 0) 0 else (cefu / CEFt) * 100
+  if(CEFt == 0) cefu <- 0
+  
+  data.frame(
+    Model             = "Dreesen",
+    `Free fraction %` = FF,
+    `Free conc mg/L`  = cefu
+  )
+}
+
+calc_free_fraction_heffernan_single <- function(CEFt, alb_val){
+  bmax <- alb_val * 0.82 * (554.6 / 66500) * 1000
+  kd   <- 18537.17 / 1290.19
+  
+  cefu <- 0.5 * ((CEFt - bmax - kd) +
+                   sqrt((CEFt - bmax - kd)^2 + 4 * kd * CEFt))
+  
+  FF <- if(CEFt == 0) 0 else (cefu / CEFt) * 100
+  if(CEFt == 0) cefu <- 0
+  
+  data.frame(
+    Model             = "Heffernan",
+    `Free fraction %` = FF,
+    `Free conc mg/L`  = cefu
+  )
+}
+
+# Single dispatch for table:
+calc_single_model <- function(model_name, CEFt, alb_val){
+  switch(
+    model_name,
+    "Bos"         = calc_free_fraction_bos_single(CEFt, alb_val),
+    "Standing"    = calc_free_fraction_standing_single(CEFt, alb_val),
+    "Gregoire"    = calc_free_fraction_gregoire_single(CEFt, alb_val),
+    "Leegwater"   = calc_free_fraction_leegwater_single(CEFt, alb_val),
+    "Gijsen"      = calc_free_fraction_gijsen_single(CEFt, alb_val),
+    "Hartman"     = calc_free_fraction_hartman_single(CEFt, alb_val),
+    "Ulldemolins" = calc_free_fraction_ulldemolins_single(CEFt, alb_val),
+    "Dreesen"     = calc_free_fraction_dreesen_single(CEFt, alb_val),
+    "Heffernan"   = calc_free_fraction_heffernan_single(CEFt, alb_val),
+    stop("Unknown model: ", model_name)
+  )
+}
+
+####-------------------------------------####
+####     3)  Shiny UI definition         ####
+####-------------------------------------####
+ui <- fluidPage(
+  # Application title
+  titlePanel("Ceftriaxone Free Fraction (%) vs. Total Concentration (mg/L)"),
+  
+  # Use fluidRow() to define a layout with two columns:
+  fluidRow(
+    
+    #--- Left Column (width=3): TWO wellPanels, one above the other ---#
+    column(
+      width = 3,
+      
+      # First wellPanel (top row) for "Plot parameters"
+      wellPanel(
+        h4("Albuminemia (g/L):"),
+        numericInput("albumin", 
+                    "", 
+                    min = 1, max = 100, value = 20, step = 1),
+        checkboxGroupInput("models", "Select Models:",
+                           choices = c("Bos","Standing","Gregoire","Leegwater",
+                                       "Gijsen","Hartman","Ulldemolins",
+                                       "Dreesen","Heffernan"),
+                           selected = c("Bos","Standing","Gregoire","Leegwater",
+                                       "Gijsen","Hartman","Ulldemolins",
+                                       "Dreesen","Heffernan"))
+      ),
+      
+      # Second wellPanel (bottom row) for "Table parameters"
+      wellPanel(
+        h4("Total Ceftriaxone (mg/L) from TDM "),
+        numericInput("ceft_val", 
+                    "",
+                    min = 0.1, max = 300, value = 50, step = 0.1)
+      )
+    ),
+    
+    #--- Right Column (width=9): Plot + Table outputs ---#
+    column(
+      width = 9,
+      plotOutput("plot_cef", height = "450px"),
+      br(),
+      h3("Free fraction (%) and Ceftriaxone unbound concentration (mg/L) based on Albuminemia (g/L) and Total Ceftriaxone (mg/L):"),
+      tableOutput("table_ff")
+    )
+  )
+)
+
+####-------------------------------------####
+####     4)  Shiny SERVER definition     ####
+####-------------------------------------####
+server <- function(input, output, session){
+  
+  # For the line plot, we compute data from 0..300 mg/L
+  combined_data <- reactive({
+    req(input$albumin, input$models)
+    df_list <- lapply(input$models, get_model_df, alb_val = input$albumin)
+    do.call(rbind, df_list)
+  })
+  
+  # For the table, we compute data for ONE specific CEFt
+  table_data <- reactive({
+    req(input$albumin, input$models, input$ceft_val)
+    df_list <- lapply(
+      input$models, 
+      function(m) calc_single_model(m, input$ceft_val, input$albumin)
+    )
+    do.call(rbind, df_list)
+  })
+  
+  #------ PLOT ------#
+  output$plot_cef <- renderPlot({
+    df <- combined_data()
+    if(nrow(df) == 0){
+      return(
+        ggplot() + 
+          geom_text(aes(x=0, y=0, label="No models selected.")) +
+          xlim(-1,1) + ylim(-1,1) + 
+          theme_void()
+      )
+    }
+    
+    # Use your custom styling
+    ggplot(df, aes(x = CEFt, y = FreeFraction, color = Model)) +  
+      geom_line(size = 1) + 
+      scale_y_continuous(breaks = seq(0, 100, by = 10), limits = c(0, 100)) +
+      scale_x_continuous(breaks = seq(0, 300, by = 25), limits = c(0, 300)) +
+      scale_color_jco() +
+      # dynamic title
+      ggtitle(paste("Albuminemia:", input$albumin, "g/L")) +
+      xlab("Total Ceftriaxone (mg/L)") + 
+      ylab("Ceftriaxone free fraction (%)") +
+      theme(
+        panel.spacing = unit(2, "cm"), 
+        axis.title.x = element_text(size = 18, face = "bold"),
+        axis.title.y = element_text(size = 18, face = "bold"),
+        panel.grid.minor = element_line(colour = "gray90"),
+        panel.grid.major = element_line(colour = "gray80"),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black", size = 2),
+        axis.text = element_text(size = 18, face = "bold"),
+        strip.text = element_text(size = 20, face = "bold"),
+        plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+        legend.title = element_text(size = 20),
+        legend.text = element_text(size = 20)
+      )
+  })
+  
+  #------ TABLE ------#
+output$table_ff <- renderTable({
+  df_out <- table_data()
+  colnames(df_out) <- c("Model", "Free Fraction (%)", "Free concentration (mg/L)")
+  df_out
+},
+digits = 2,
+align = 'ccc',       # Center all 3 columns
+width = "600px"      # Make table a bit wider
+)
+
+}
+
+shinyApp(ui, server)
