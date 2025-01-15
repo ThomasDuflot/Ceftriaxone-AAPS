@@ -11,6 +11,8 @@
     
 ###  - [R Code](https://github.com/ThomasDuflot/Ceftriaxone-AAPS/blob/main/R%20Code): Used for statistical analyses, plots and tables export.</h4>
 
+###  - [Shiny App](https://github.com/ThomasDuflot/Ceftriaxone-AAPS/blob/main/ShinyApp%20Free%20Fraction): A user friendly application to get free fraction and unbound concentration based on total ceftriaxone and albuminemia for all models</h4>
+
 ### If you use data from this repository, please cite [Link Paper](https://pages.github.com/). 
 
 ## **WARNING!**
