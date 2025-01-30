@@ -1,3 +1,4 @@
+app_code <- '
 library(shiny)
 library(ggplot2)
 library(dplyr)
@@ -20,7 +21,7 @@ calc_free_fraction_bos <- function(ceft_vec, alb_val){
   
   FF <- (bosCEFu / ceft_vec) * 100
   FF[ceft_vec == 0] <- 0  # avoid div-by-zero
-  data.frame(CEFt = ceft_vec, FreeFraction = FF, Model = "Bos")
+  data.frame(CEFt = ceft_vec, UnboundFraction = FF, Model = "Bos")
 }
 
 calc_free_fraction_standing <- function(ceft_vec, alb_val){
@@ -33,19 +34,16 @@ calc_free_fraction_standing <- function(ceft_vec, alb_val){
   
   FF <- (cefu / ceft_vec) * 100
   FF[ceft_vec == 0] <- 0
-  data.frame(CEFt = ceft_vec, FreeFraction = FF, Model = "Standing")
+  data.frame(CEFt = ceft_vec, UnboundFraction = FF, Model = "Standing")
 }
 
 calc_free_fraction_gregoire <- function(ceft_vec, alb_val){
-  # Gregoire polynomial for free fraction
-  # Fb = -5e-9 * CEFt^3 + 6e-7 * CEFt^2 - 0.0004 * CEFt + 0.9393
-  # Then unbound = (1 - Fb)*CEFt
   fb <- -5e-9 * ceft_vec^3 + 6e-7 * ceft_vec^2 - 0.0004 * ceft_vec + 0.9393
   cefu <- (1 - fb) * ceft_vec
   
   FF <- (cefu / ceft_vec) * 100
   FF[ceft_vec == 0] <- 0
-  data.frame(CEFt = ceft_vec, FreeFraction = FF, Model = "Gregoire")
+  data.frame(CEFt = ceft_vec, UnboundFraction = FF, Model = "Gregoire")
 }
 
 calc_free_fraction_leegwater <- function(ceft_vec, alb_val){
@@ -58,7 +56,7 @@ calc_free_fraction_leegwater <- function(ceft_vec, alb_val){
                    sqrt((ceft_vec - bmax - kd)^2 + 4 * kd * ceft_vec))
   FF <- (cefu / ceft_vec) * 100
   FF[ceft_vec == 0] <- 0
-  data.frame(CEFt = ceft_vec, FreeFraction = FF, Model = "Leegwater")
+  data.frame(CEFt = ceft_vec, UnboundFraction = FF, Model = "Leegwater")
 }
 
 calc_free_fraction_gijsen <- function(ceft_vec, alb_val){
@@ -73,7 +71,7 @@ calc_free_fraction_gijsen <- function(ceft_vec, alb_val){
   
   FF <- (gijCEFu / ceft_vec) * 100
   FF[ceft_vec == 0] <- 0
-  data.frame(CEFt = ceft_vec, FreeFraction = FF, Model = "Gijsen")
+  data.frame(CEFt = ceft_vec, UnboundFraction = FF, Model = "Gijsen")
 }
 
 calc_free_fraction_hartman <- function(ceft_vec, alb_val){
@@ -84,16 +82,15 @@ calc_free_fraction_hartman <- function(ceft_vec, alb_val){
                    sqrt((ceft_vec - bmax - kd)^2 + 4 * kd * ceft_vec))
   FF <- (cefu / ceft_vec) * 100
   FF[ceft_vec == 0] <- 0
-  data.frame(CEFt = ceft_vec, FreeFraction = FF, Model = "Hartman")
+  data.frame(CEFt = ceft_vec, UnboundFraction = FF, Model = "Hartman")
 }
 
 calc_free_fraction_ulldemolins <- function(ceft_vec, alb_val){
-  # Fu = exp(-0.82*(Alb/24.2))
   fu <- exp(-0.82 * (alb_val / 24.2))
   cefu <- fu * ceft_vec
   FF <- (cefu / ceft_vec)*100
   FF[ceft_vec == 0] <- 0
-  data.frame(CEFt = ceft_vec, FreeFraction = FF, Model = "Ulldemolins")
+  data.frame(CEFt = ceft_vec, UnboundFraction = FF, Model = "Ulldemolins")
 }
 
 calc_free_fraction_dreesen <- function(ceft_vec, alb_val){
@@ -107,7 +104,7 @@ calc_free_fraction_dreesen <- function(ceft_vec, alb_val){
   cefu <- dreesenAlbNb * 554.58
   FF <- (cefu / ceft_vec)*100
   FF[ceft_vec == 0] <- 0
-  data.frame(CEFt = ceft_vec, FreeFraction = FF, Model = "Dreesen")
+  data.frame(CEFt = ceft_vec, UnboundFraction = FF, Model = "Dreesen")
 }
 
 calc_free_fraction_heffernan <- function(ceft_vec, alb_val){
@@ -118,7 +115,7 @@ calc_free_fraction_heffernan <- function(ceft_vec, alb_val){
                    sqrt((ceft_vec - bmax - kd)^2 + 4 * kd * ceft_vec))
   FF <- (cefu / ceft_vec)*100
   FF[ceft_vec == 0] <- 0
-  data.frame(CEFt = ceft_vec, FreeFraction = FF, Model = "Heffernan")
+  data.frame(CEFt = ceft_vec, UnboundFraction = FF, Model = "Heffernan")
 }
 
 # Helper to get full lines (0-300 mg/L) for a chosen model and albumin:
@@ -159,8 +156,8 @@ calc_free_fraction_bos_single <- function(CEFt, alb_val){
   
   data.frame(
     Model             = "Bos",
-    `Free fraction %` = FF,
-    `Free conc mg/L`  = bosCEFu
+    `Unbound fraction %` = FF,
+    `Unbound conc mg/L`  = bosCEFu
   )
 }
 
@@ -177,13 +174,12 @@ calc_free_fraction_standing_single <- function(CEFt, alb_val){
   
   data.frame(
     Model             = "Standing",
-    `Free fraction %` = FF,
-    `Free conc mg/L`  = cefu
+    `Unbound fraction %` = FF,
+    `Unbound conc mg/L`  = cefu
   )
 }
 
 calc_free_fraction_gregoire_single <- function(CEFt, alb_val){
-  # Gregoire formula doesn't use Alb
   fb <- -5e-9 * CEFt^3 + 6e-7 * CEFt^2 - 0.0004 * CEFt + 0.9393
   cefu <- (1 - fb) * CEFt
   
@@ -192,8 +188,8 @@ calc_free_fraction_gregoire_single <- function(CEFt, alb_val){
   
   data.frame(
     Model             = "Gregoire",
-    `Free fraction %` = FF,
-    `Free conc mg/L`  = cefu
+    `Unbound fraction %` = FF,
+    `Unbound conc mg/L`  = cefu
   )
 }
 
@@ -211,8 +207,8 @@ calc_free_fraction_leegwater_single <- function(CEFt, alb_val){
   
   data.frame(
     Model             = "Leegwater",
-    `Free fraction %` = FF,
-    `Free conc mg/L`  = cefu
+    `Unbound fraction %` = FF,
+    `Unbound conc mg/L`  = cefu
   )
 }
 
@@ -231,8 +227,8 @@ calc_free_fraction_gijsen_single <- function(CEFt, alb_val){
   
   data.frame(
     Model             = "Gijsen",
-    `Free fraction %` = FF,
-    `Free conc mg/L`  = gijCEFu
+    `Unbound fraction %` = FF,
+    `Unbound conc mg/L`  = gijCEFu
   )
 }
 
@@ -248,8 +244,8 @@ calc_free_fraction_hartman_single <- function(CEFt, alb_val){
   
   data.frame(
     Model             = "Hartman",
-    `Free fraction %` = FF,
-    `Free conc mg/L`  = cefu
+    `Unbound fraction %` = FF,
+    `Unbound conc mg/L`  = cefu
   )
 }
 
@@ -262,8 +258,8 @@ calc_free_fraction_ulldemolins_single <- function(CEFt, alb_val){
   
   data.frame(
     Model             = "Ulldemolins",
-    `Free fraction %` = FF,
-    `Free conc mg/L`  = cefu
+    `Unbound fraction %` = FF,
+    `Unbound conc mg/L`  = cefu
   )
 }
 
@@ -282,8 +278,8 @@ calc_free_fraction_dreesen_single <- function(CEFt, alb_val){
   
   data.frame(
     Model             = "Dreesen",
-    `Free fraction %` = FF,
-    `Free conc mg/L`  = cefu
+    `Unbound fraction %` = FF,
+    `Unbound conc mg/L`  = cefu
   )
 }
 
@@ -299,8 +295,8 @@ calc_free_fraction_heffernan_single <- function(CEFt, alb_val){
   
   data.frame(
     Model             = "Heffernan",
-    `Free fraction %` = FF,
-    `Free conc mg/L`  = cefu
+    `Unbound fraction %` = FF,
+    `Unbound conc mg/L`  = cefu
   )
 }
 
@@ -345,7 +341,7 @@ ui <- fluidPage(
   "))),
   
   # Application title
-  titlePanel("Ceftriaxone Free Fraction (%) vs. Total Concentration (mg/L)"),
+  titlePanel("Ceftriaxone optimization"),
   
   # Use fluidRow() to define a layout with two columns:
   fluidRow(
@@ -366,7 +362,9 @@ ui <- fluidPage(
                                        "Dreesen", "Heffernan"),
                            selected = c("Bos", "Standing", "Gregoire", "Leegwater",
                                         "Gijsen", "Hartman", "Ulldemolins",
-                                        "Dreesen", "Heffernan"))  # Checkboxes
+                                        "Dreesen", "Heffernan")),  # Checkboxes
+        numericInput("mic", "MIC (mg/L):", 
+                     min = 0.1, max = 100, value = 1, step = 0.1)  # New MIC input
       ),
       
       # Second wellPanel (bottom row) for "Table parameters"
@@ -383,12 +381,14 @@ ui <- fluidPage(
       width = 9,
       plotOutput("plot_cef", height = "450px"),
       br(),
-      h3("Free fraction (%) and Ceftriaxone unbound concentration (mg/L) based on Albuminemia (g/L) and Total Ceftriaxone (mg/L):"),
-      tableOutput("table_ff")
+      h3("Unbound fraction (%) and Ceftriaxone unbound concentration (mg/L) based on Albuminemia (g/L) and Total Ceftriaxone (mg/L):"),
+      tableOutput("table_ff"),
+      br(),
+      h3("Total Ceftriaxone concentration (mg/L) needed to reach MIC target:"),
+      tableOutput("table_mic")
     )
   )
 )
-
 
 ####-------------------------------------####
 ####     4)  Shiny SERVER definition     ####
@@ -407,7 +407,28 @@ server <- function(input, output, session){
     req(input$albumin, input$models, input$ceft_val)
     df_list <- lapply(
       input$models, 
-      function(m) calc_single_model(m, input$ceft_val, input$albumin)
+      function(m) {
+        df <- calc_single_model(m, input$ceft_val, input$albumin)
+        df
+      }
+    )
+    do.call(rbind, df_list)
+  })
+  
+  # For the MIC table, we compute the minimum CefT to reach MIC
+  mic_table_data <- reactive({
+    req(input$albumin, input$models, input$mic)
+    df_list <- lapply(
+      input$models, 
+      function(m) {
+        ceft_seq <- seq(0.1, 300, 0.1)
+        free_conc <- get_model_df(m, input$albumin)$UnboundFraction * ceft_seq / 100
+        min_ceft <- ceft_seq[which(free_conc >= input$mic)[1]]
+        data.frame(
+          Model = m,
+          `Total Ceftriaxone concentration (mg/L) needed to reach MIC target` = ifelse(is.na(min_ceft), ">300", round(min_ceft, 2))
+        )
+      }
     )
     do.call(rbind, df_list)
   })
@@ -425,7 +446,7 @@ server <- function(input, output, session){
     }
     
     # Use your custom styling
-    ggplot(df, aes(x = CEFt, y = FreeFraction, color = Model)) +  
+    ggplot(df, aes(x = CEFt, y = UnboundFraction, color = Model)) +  
       geom_line(size = 1) + 
       scale_y_continuous(breaks = seq(0, 100, by = 10), limits = c(0, 100)) +
       scale_x_continuous(breaks = seq(0, 300, by = 25), limits = c(0, 300)) +
@@ -433,7 +454,7 @@ server <- function(input, output, session){
       # dynamic title
       ggtitle(paste("Albuminemia:", input$albumin, "g/L")) +
       xlab("Total Ceftriaxone (mg/L)") + 
-      ylab("Ceftriaxone free fraction (%)") +
+      ylab("Ceftriaxone unbound fraction (%)") +
       theme(
         panel.spacing = unit(2, "cm"), 
         axis.title.x = element_text(size = 18, face = "bold"),
@@ -451,16 +472,32 @@ server <- function(input, output, session){
   })
   
   #------ TABLE ------#
-output$table_ff <- renderTable({
-  df_out <- table_data()
-  colnames(df_out) <- c("Model", "Free Fraction (%)", "Free concentration (mg/L)")
-  df_out
-},
-digits = 2,
-align = 'ccc',       # Center all 3 columns
-width = "600px"      # Make table a bit wider
-)
-
+  output$table_ff <- renderTable({
+    df_out <- table_data()
+    colnames(df_out) <- c("Model", "Unbound fraction (%)", "Ceftriaxone Unbound Concentration (mg/L)")
+    df_out
+  },
+  digits = 2,
+  align = 'ccc',       # Center all 3 columns
+  width = "600px"      # Make table a bit wider
+  )
+  
+  #------ MIC TABLE ------#
+  output$table_mic <- renderTable({
+    df_out <- mic_table_data()
+    colnames(df_out) <- c("Model", "Total Ceftriaxone concentration (mg/L)")
+    df_out
+  },
+  digits = 2,
+  align = 'cc',       # Center all 2 columns
+  width = "600px"      # Make table a bit wider
+  )
 }
 
-shinyApp(ui, server)
+shinyApp(ui, server)'
+app_dir <- file.path(tempdir(), "shiny_temp_app")
+dir.create(app_dir, showWarnings = FALSE)  # Create the directory
+
+writeLines(app_code, file.path(app_dir, "app.R"))  # Write the app script
+
+rsconnect::deployApp(app_dir)  # Deploy it
