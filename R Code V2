@@ -969,7 +969,7 @@ summary_table <- DFCEF_patient %>%
   dplyr::select(-ID) %>%  # Remove the 'ID' variable
   tbl_summary(
     statistic = list(
-      all_continuous() ~ "{median} [{p25} - {p75}]",  # Median and IQR for continuous
+      all_continuous() ~ "{median} [{p5} - {p95}]",  # Median and 5th 95th percentiles for continuous
       all_categorical() ~ "{n} / {N} ({p}%)"         # Count and percentage for categorical
     ),
     missing = "no"  # Options: "no", "ifany", "always"
@@ -988,7 +988,7 @@ DFCEF_selected_samples <- DFCEF[,c(4,33:44,23:25,31)]
 summary_table <- DFCEF_selected_samples %>%
   tbl_summary(
     statistic = list(
-      all_continuous() ~ "{median} [{p25} - {p75}]",  # Median and IQR for continuous
+      all_continuous() ~ "{median} [{p5} - {p95}]",  # Median and 5th 95th percentiles for continuous
       all_categorical() ~ "{n} / {N} ({p}%)"         # Count and percentage for categorical
     ),
     missing = "no"  # Options: "no", "ifany", "always"
