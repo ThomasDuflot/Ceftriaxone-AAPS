@@ -41,6 +41,7 @@ library(exact2x2)
 library(lmerTest)
 library(multcomp)
 
+setwd("D:/MOBILITE/AAPS/R1"
 ####################### Unbound ceftriaxone modeling ####################### 
 ### BOS ###
 BosAlbN <- rep(35,3001) 			
@@ -828,8 +829,8 @@ obs_vs_pred_plot <- ggplot(obs_vs_pred_df, aes(x = Observed, y = Predicted, colo
   facet_wrap(~ Model, ncol = 3,nrow=3, scales = "free") +  # Option to adjust scales
   labs(
     title = "Observation vs Prediction",
-    x = "Observed (mg/L)",
-    y = "Predicted (mg/L)"
+    x = "Observed unbound Ceftriaxone (mg/L)",
+    y = "Predicted unbound Ceftriaxone (mg/L)"
   ) +
   custom_theme +
   scale_color_jco() +
@@ -1115,7 +1116,7 @@ countsModel$Frequency <- (countsModel$Counts / countsModel$noNA)*100
 p5<-ggplot(data = countsModel, aes(x = MIC, y = Frequency, fill = Model)) + 
   geom_bar(stat = "identity", position = "dodge", colour = "black") + 
 scale_fill_jco() +
-  labs(x = "\n fT > MIC 100% ", y = "Frequency of Target Attainment (%) \n", 
+  labs(x = "\n fT > MIC 100% ", y = "Probability of Target Attainment - PTA (%) \n", 
        title = "\n",
        fill = "Target attainment")+
 theme(
@@ -1518,7 +1519,7 @@ PTA1x1<-ggplot(long_data, aes(x = MIC_values, y = PTA,color=Model)) +
   scale_y_continuous(breaks = seq(0, 100, by = 10)) +
   xlab("MIC (mg/L)") + 
   ylab("PTA (%)") +
-  ggtitle("1g x 1 /day") +
+  ggtitle("1g once-daily") +
 theme(
 plot.title = element_text(size=18,face="bold"),
 axis.title.x = element_text(size=18, face="bold"),
@@ -1550,7 +1551,7 @@ PTA1x2<-ggplot(long_data, aes(x = MIC_values, y = PTA,color=Model)) +
   scale_y_continuous(breaks = seq(0, 100, by = 10)) +
   xlab("MIC (mg/L)") + 
   ylab("PTA (%)") +
-  ggtitle("1g x 2 /day") +
+  ggtitle("1g twice-daily") +
 theme(
 plot.title = element_text(size=18,face="bold"),
 axis.title.x = element_text(size=18, face="bold"),
@@ -1581,7 +1582,7 @@ PTA2x1<-ggplot(long_data, aes(x = MIC_values, y = PTA,color=Model)) +
   scale_y_continuous(breaks = seq(0, 100, by = 10)) +
   xlab("MIC (mg/L)") +
   ylab("PTA (%)") +
-  ggtitle("2g x 1 /day") +
+  ggtitle("2g once-daily") +
 theme(
 plot.title = element_text(size=18,face="bold"),
 axis.title.x = element_text(size=18, face="bold"),
@@ -1612,7 +1613,7 @@ PTA2x2<-ggplot(long_data, aes(x = MIC_values, y = PTA,color=Model)) +
   scale_y_continuous(breaks = seq(0, 100, by = 10)) +
   xlab("MIC (mg/L)") + 
   ylab("PTA (%)") +
-  ggtitle("2g x 2 /day") +
+  ggtitle("2g twice-daily") +
 theme(
 plot.title = element_text(size=18,face="bold"),
 axis.title.x = element_text(size=18, face="bold"),
