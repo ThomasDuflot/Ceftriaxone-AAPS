@@ -41,7 +41,7 @@ library(exact2x2)
 library(lmerTest)
 library(multcomp)
 
-setwd("D:/MOBILITE/AAPS/R1"
+setwd("E:/MOBILITE/AAPS/R1")
 ####################### Unbound ceftriaxone modeling ####################### 
 ### BOS ###
 BosAlbN <- rep(35,3001) 			
@@ -467,7 +467,7 @@ sd(result_df2[10:18,2])/mean(result_df2[10:18,2])*100
 ####################### External Validation ####################### 
 
 
-DFPatient<-read.csv2("D:/MOBILITE/AAPS/R1/Supplementary File S3 - External Validation.csv")
+DFPatient<-read.csv2("E:/MOBILITE/AAPS/R1/Supplementary File S3 - External Validation.csv")
 char_columns <- sapply(DFPatient, is.character)
 DFPatient[char_columns] <- lapply(DFPatient[char_columns], as.factor)
 
@@ -1391,6 +1391,7 @@ gt_tbl <- gt(result_table)
 
 gt_tbl |> gtsave("CEFt.docx")
 
+library(tidyr)
 CEFtPred_clean <- CEFtPred %>%
   drop_na()
 
@@ -1448,15 +1449,37 @@ gt_tbl |> gtsave("CEFtFinal.docx")
 
 
 
-ANOVA_DF<- DFCEF[,c(4,31)]
+
+
+# Select necessary columns: Age, Albumin, Creatininemia, CEFtot, and Dosing Regimen
+ANOVA_DF <- DFCEF[, c("ID","CEFt", "Dosing_Regimen", "Age", "Albumin", "Creatinin")]
+
+# Keep only relevant dosing regimens
 keeped_dosing <- c("1g x 1 /day", "1g x 2 /day", "2g x 1 /day", "2g x 2 /day")
 ANOVA_subset <- subset(ANOVA_DF, Dosing_Regimen %in% keeped_dosing)
-modaov<-aov(CEFt~Dosing_Regimen,data=ANOVA_subset)
-posthoc <- glht(modaov, linfct = mcp(Dosing_Regimen = "Tukey"))
 
-figaov <- ggplot(ANOVA_subset, aes(x = Dosing_Regimen, y = CEFt))+
-geom_boxplot(
-  aes(fill = Dosing_Regimen), alpha = 0.5,outlier.shape=NA) +xlab("")+ylab("Total Ceftriaxone concentration (mg/L)")+
+# Remove rows with missing values to avoid issues in LMER
+ANOVA_subset <- drop_na(ANOVA_subset)
+
+lmer_model <- lmer(CEFt ~ Dosing_Regimen + Age + Albumin + Creatinin + (1 | ID), data = ANOVA_subset)
+
+# Perform ANOVA on the LMER model
+anova_lmer <- anova(lmer_model)
+print(anova_lmer)
+
+# Get predicted values from the model
+ANOVA_subset$Adjusted_CEFt <- predict(lmer_model, re.form = NA)  # Predicted values without random effects
+
+# Perform pairwise post-hoc comparisons using Tukey's test
+posthoc_results <- pairs(emmeans(lmer_model, ~ Dosing_Regimen), adjust = "tukey")
+
+# Convert posthoc results into a dataframe for visualization
+posthoc_df <- as.data.frame(posthoc_results)
+print(posthoc_df)
+
+figlmer <- ggplot(ANOVA_subset, aes(x = Dosing_Regimen, y = Adjusted_CEFt))+
+  geom_boxplot(aes(fill = Dosing_Regimen), alpha = 0.5, outlier.shape = NA) +
+  xlab("") + ylab("Adjusted Total Ceftriaxone Concentration (mg/L)") +
 scale_fill_jco()+ # Boxplot fill color
 scale_color_jco()+ labs(fill="Dosing Regimen")+
 geom_jitter(aes(color=Dosing_Regimen), width=0.3,show.legend = FALSE)+
@@ -1470,23 +1493,27 @@ theme(axis.line = element_line(colour = "black",size=2))+
 theme(axis.text=element_text(size=18,face="bold"))+  
 theme(legend.title = element_text(size = 24),legend.text = element_text(size = 24))+
 geom_segment(aes(x = 1, y = 225, xend = 2, yend = 225),size=2)+
-geom_segment(aes(x = 1, y = 400, xend = 4, yend = 400),size=2)+
-geom_segment(aes(x = 2, y = 250, xend = 3, yend = 250),size=2)+
-geom_segment(aes(x = 2, y = 425, xend = 4, yend = 425),size=2)+
-geom_segment(aes(x = 3, y = 450, xend = 4, yend = 450),size=2)+
+geom_segment(aes(x = 1, y = 250, xend = 4, yend = 250),size=2)+
+geom_segment(aes(x = 2, y = 275, xend = 4, yend = 275),size=2)+
+geom_segment(aes(x = 3, y = 300, xend = 4, yend = 300),size=2)+
 annotate(geom="text",label="***",x=1.5,y=230,size=8,fontface=2)+
-annotate(geom="text",label="***",x=2.5,y=405,size=8,fontface=2)+
-annotate(geom="text",label="*",x=2.5,y=255,size=8,fontface=2)+
-annotate(geom="text",label="***",x=3,y=430,size=8,fontface=2)+
-annotate(geom="text",label="***",x=3.5,y=455,size=8,fontface=2)
+annotate(geom="text",label="***",x=2.5,y=255,size=8,fontface=2)+
+annotate(geom="text",label="***",x=3,y=280,size=8,fontface=2)+
+annotate(geom="text",label="***",x=3.5,y=305,size=8,fontface=2)
 
-png(file = "FigAOV.png", width = 12, height = 9, units = 'in',res=600)
-figaov
+# Save the plot
+png(file = "FigLMER_Adjusted.png", width = 12, height = 9, units = 'in', res=600)
+print(figlmer)
 dev.off()
 
-result <- ANOVA_subset %>%
+# Compute Mean ± SD instead of Mean ± SE
+emm_df_sd <- ANOVA_subset %>%
   group_by(Dosing_Regimen) %>%
-  summarize(Mean_CEFt = mean(CEFt), SD_CEFt = sd(CEFt))
+  summarize(Mean_Adjusted_CEFt = mean(Adjusted_CEFt), SD_Adjusted_CEFt = sd(Adjusted_CEFt))
+
+# Print the new dataframe
+print(emm_df_sd)
+
 
 
 DFCEFFil<-DFCEF
