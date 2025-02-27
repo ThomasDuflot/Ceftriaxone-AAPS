@@ -1,6 +1,6 @@
 # **Ceftriaxone AAPS**
 
-## This repository was created to reproduce all results from [Unraveling Ceftriaxone Dosing: Free Drug Prediction, Threshold Optimization, and Model Validation](https://link.springer.com/article/10.1208/s12248-025-01041-w?utm_source=rct_congratemailt&utm_medium=email&utm_campaign=nonoa_20250227&utm_content=10.1208/s12248-025-01041-w). 
+## This repository was created to reproduce all results from [Unraveling Ceftriaxone Dosing: Free Drug Prediction, Threshold Optimization, and Model Validation](https://doi.org/10.1208/s12248-025-01041-w). 
 ## It contains raw data as well as R code, ensuring transparency of the results. In this context, the repository includes:
 
 ###  - [Unbound Ceftriaxone Calculator.xlsx](https://github.com/ThomasDuflot/Ceftriaxone-AAPS/blob/main/Unbound%20Ceftriaxone%20Calculator.xlsx): This excel sheet allows to compute the unbound ceftriaxone from total ceftriaxone and albuminemia
